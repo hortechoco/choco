@@ -48,7 +48,8 @@
 
     try {
       await Auth.signIn(tel, pin);
-      await _iniciarApp();
+      Auth.redirigirSegunRol();               // ← Redirige a tienda o panel según rol
+      if (!Auth.esCliente) await _iniciarApp(); // Solo inicializa panel si es vendedor/admin
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.remove('d-none');
@@ -82,7 +83,8 @@
         direccion: document.getElementById('reg-direccion').value.trim(),
         pin:       document.getElementById('reg-pin').value,
       });
-      await _iniciarApp();
+      Auth.redirigirSegunRol();               // ← Redirige a tienda (el rol por defecto es 'cliente')
+      // No se llama a _iniciarApp() porque el nuevo usuario es cliente
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.remove('d-none');
@@ -98,14 +100,21 @@
     });
   });
 
-  // ── Logout ─────────────────────────────────────────
+  // ── Logout (Panel) ─────────────────────────────────
   document.getElementById('btn-logout').addEventListener('click', () => {
     Auth.signOut();
     document.getElementById('app-shell').classList.add('d-none');
     document.getElementById('login-screen').classList.remove('d-none');
   });
 
-  // ── Modales ────────────────────────────────────────
+  // ── Logout (Storefront) ────────────────────────────
+  document.getElementById('btn-storefront-logout')?.addEventListener('click', () => {
+    Auth.signOut();
+    document.getElementById('storefront-view').classList.add('d-none');
+    document.getElementById('login-screen').classList.remove('d-none');
+  });
+
+  // ── Modales (Panel) ────────────────────────────────
   document.getElementById('btn-guardar-producto').addEventListener('click', () => Productos.guardar());
   document.getElementById('btn-nuevo-producto').addEventListener('click',   () => Productos.abrirModal());
   document.getElementById('btn-guardar-cliente').addEventListener('click',  () => Clientes.guardar());
@@ -117,8 +126,15 @@
 
   // ── Sesión existente ───────────────────────────────
   const sesionActiva = await Auth.iniciar();
-  if (sesionActiva) await _iniciarApp();
+  if (sesionActiva) {
+    Auth.redirigirSegunRol();
+    if (!Auth.esCliente) await _iniciarApp();
+  }
 })();
+
+// ─────────────────────────────────────────────────────
+// FUNCIONES AUXILIARES (fuera del IIFE)
+// ─────────────────────────────────────────────────────
 
 async function _iniciarApp() {
   document.getElementById('login-screen').classList.add('d-none');
