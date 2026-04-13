@@ -83,32 +83,16 @@ async function fetchVentasHoy() {
   return fetchVentas({ desde: hoy, hasta: hoy });
 }
 
-// ── CLIENTES ───────────────────────────────────────
+// AGREGAR nueva función para obtener clientes (ahora de perfiles)
 async function fetchClientes(filtro = '') {
-  let q = db.from('clientes').select('*').order('nombre_completo');
+  let q = db.from('perfiles').select('*').order('nombre_completo');
   if (filtro) q = q.ilike('nombre_completo', `%${filtro}%`);
   const { data, error } = await q;
   if (error) throw error;
   return data;
 }
 
-async function insertCliente(payload) {
-  const { data, error } = await db.from('clientes').insert([payload]).select().single();
-  if (error) throw error;
-  return data;
-}
-
-async function updateCliente(id, payload) {
-  const { data, error } = await db.from('clientes').update(payload).eq('id', id).select().single();
-  if (error) throw error;
-  return data;
-}
-
-async function deleteCliente(id) {
-  const { error } = await db.from('clientes').delete().eq('id', id);
-  if (error) throw error;
-}
-
+// MODIFICAR fetchVentasDeCliente para que use perfiles
 async function fetchVentasDeCliente(clienteId) {
   const { data, error } = await db
     .from('ventas').select('*').eq('cliente_id', clienteId)
