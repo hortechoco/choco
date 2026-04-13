@@ -10,7 +10,7 @@ const Auth = {
   get rol()    { return this._perfil?.rol ?? null; },
   get esAdmin(){ return this.rol === 'admin'; },
 
-  _emailDeTel: tel => `${tel.replace(/\D/g,'')}@horte.internal`,
+  _emailDeTel: tel => `u${tel.replace(/\D/g,'')}@horte.app`,
   _passDePin:  pin => `${pin}@@horte`,  // PIN 4 dígitos → 10 chars válidos
 
   async iniciar() {
