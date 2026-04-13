@@ -307,6 +307,109 @@
     </div>
   </div>
 
+  <!-- ============================================= -->
+<!-- STOREFRONT VIEW (para clientes)               -->
+<!-- ============================================= -->
+<div id="storefront-view" class="d-none">
+  <!-- NAVBAR DE TIENDA (más simple) -->
+  <nav class="navbar navbar-luxury sticky-top">
+    <div class="container-fluid px-4">
+      <span class="navbar-brand-luxury">
+        <span class="brand-name">Horte</span>
+        <span class="brand-sep">·</span>
+        <span class="brand-module">Tienda</span>
+      </span>
+      <div class="d-flex align-items-center gap-3">
+        <span class="user-badge" id="storefront-user-badge"></span>
+        <button class="btn-icon btn-toggle-tema" title="Cambiar tema"><i class="bi bi-sun"></i></button>
+        <button id="btn-storefront-logout" class="btn-icon" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- CONTENIDO PRINCIPAL DE TIENDA -->
+  <main class="main-content p-4">
+    <div class="view-header mb-4">
+      <h1 class="view-title">Catálogo de Chocolates</h1>
+      <p class="view-subtitle">Selecciona tus productos favoritos</p>
+    </div>
+
+    <div class="row g-4">
+      <!-- COLUMNA IZQUIERDA: CATÁLOGO -->
+      <div class="col-lg-7">
+        <div class="luxury-card p-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="card-section-title mb-0">Nuestros productos</h5>
+            <input type="text" id="storefront-buscar" class="form-control form-control-sm input-luxury" style="max-width:200px" placeholder="Buscar...">
+          </div>
+          <div id="storefront-catalogo" class="catalogo-grid">
+            <div class="empty-state">Cargando productos...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA: CARRITO -->
+      <div class="col-lg-5">
+        <div class="luxury-card p-4 d-flex flex-column" style="min-height:500px">
+          <h5 class="card-section-title mb-3">Tu pedido</h5>
+          <div id="storefront-carrito-items" class="carrito-list flex-grow-1">
+            <div class="empty-state text-center py-5">
+              <i class="bi bi-bag" style="font-size:2rem;opacity:.2"></i>
+              <p class="mt-2 small">Aún no has agregado productos</p>
+            </div>
+          </div>
+          <div class="carrito-footer mt-3">
+            <!-- Tipo de entrega -->
+            <div class="mb-3">
+              <label class="label-luxury mb-2">Tipo de entrega</label>
+              <div class="d-flex gap-2">
+                <button class="btn btn-entrega active" data-tipo="recogida"><i class="bi bi-shop me-1"></i>Recogida</button>
+                <button class="btn btn-entrega" data-tipo="domicilio"><i class="bi bi-bicycle me-1"></i>Domicilio</button>
+              </div>
+            </div>
+            <div id="storefront-cargo-row" class="mb-3 d-none">
+              <label class="label-luxury mb-1">Cargo domicilio ($)</label>
+              <input type="number" id="storefront-cargo" class="form-control input-luxury" min="0" step="0.01" value="0">
+            </div>
+            <!-- Método de pago -->
+            <div class="mb-3">
+              <label class="label-luxury mb-1">Método de pago</label>
+              <select id="storefront-metodo-pago" class="form-select input-luxury">
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="tarjeta">Tarjeta</option>
+              </select>
+            </div>
+            <!-- Notas adicionales -->
+            <div class="mb-3">
+              <label class="label-luxury mb-1">Notas (opcional)</label>
+              <textarea id="storefront-notas" class="form-control input-luxury" rows="2" placeholder="Indicaciones especiales..."></textarea>
+            </div>
+            <!-- Totales -->
+            <div class="carrito-total mb-3">
+              <div class="d-flex justify-content-between mb-1">
+                <span class="label-luxury">Subtotal</span>
+                <span id="storefront-subtotal">$0.00</span>
+              </div>
+              <div class="d-flex justify-content-between mb-1" id="storefront-cargo-display" style="display:none!important">
+                <span class="label-luxury">Domicilio</span>
+                <span id="storefront-cargo-valor">$0.00</span>
+              </div>
+              <div class="d-flex justify-content-between total-line mt-2 pt-2">
+                <strong>Total</strong>
+                <strong id="storefront-total" class="text-gold">$0.00</strong>
+              </div>
+            </div>
+            <button id="btn-confirmar-pedido" class="btn btn-luxury w-100" disabled>
+              <i class="bi bi-check2-circle me-2"></i>Confirmar pedido
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
   <!-- LOADER GLOBAL -->
   <div id="global-loader" class="global-loader d-none"><div class="loader-ring"></div></div>
 
