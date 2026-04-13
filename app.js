@@ -1,9 +1,17 @@
-// app.js — punto de entrada: detecta tema, gestiona auth y navegación
+// app.js — punto de entrada: tema (cookie), auth y navegación
 // Depende de: auth.js, ui.js, productos.js, ventas.js, historial.js, clientes.js
 
 (async function init() {
-  // ── Tema guardado ──────────────────────────────────
-  const temaGuardado = localStorage.getItem('horte-tema') || 'dark';
+  // ── Tema (cookie, sin localStorage) ───────────────
+  function _leerTemaCookie() {
+    return document.cookie.split(';').map(c => c.trim())
+      .find(c => c.startsWith('horte-tema='))?.split('=')[1] ?? 'dark';
+  }
+  function _guardarTemaCookie(tema) {
+    document.cookie = `horte-tema=${tema}; path=/; max-age=${365 * 86400}; SameSite=Strict`;
+  }
+
+  const temaGuardado = _leerTemaCookie();
   document.documentElement.setAttribute('data-bs-theme', temaGuardado);
   _sincronizarIconoTema(temaGuardado);
 
@@ -11,7 +19,7 @@
     const actual = document.documentElement.getAttribute('data-bs-theme');
     const nuevo  = actual === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-bs-theme', nuevo);
-    localStorage.setItem('horte-tema', nuevo);
+    _guardarTemaCookie(nuevo);
     _sincronizarIconoTema(nuevo);
   }
 
@@ -91,42 +99,25 @@
   });
 
   // ── Logout ─────────────────────────────────────────
-  document.getElementById('btn-logout').addEventListener('click', async () => {
-    await Auth.signOut();
+  document.getElementById('btn-logout').addEventListener('click', () => {
+    Auth.signOut();
     document.getElementById('app-shell').classList.add('d-none');
     document.getElementById('login-screen').classList.remove('d-none');
   });
 
-  // ── Guardar producto (modal) ───────────────────────
-  document.getElementById('btn-guardar-producto').addEventListener('click', () => {
-    Productos.guardar();
-  });
+  // ── Modales ────────────────────────────────────────
+  document.getElementById('btn-guardar-producto').addEventListener('click', () => Productos.guardar());
+  document.getElementById('btn-nuevo-producto').addEventListener('click',   () => Productos.abrirModal());
+  document.getElementById('btn-guardar-cliente').addEventListener('click',  () => Clientes.guardar());
+  document.getElementById('btn-nuevo-cliente').addEventListener('click',    () => Clientes.abrirModal());
 
-  // ── Nuevo producto ─────────────────────────────────
-  document.getElementById('btn-nuevo-producto').addEventListener('click', () => {
-    Productos.abrirModal();
-  });
-
-  // ── Guardar cliente (modal) ────────────────────────
-  document.getElementById('btn-guardar-cliente').addEventListener('click', () => {
-    Clientes.guardar();
-  });
-
-  // ── Nuevo cliente ──────────────────────────────────
-  document.getElementById('btn-nuevo-cliente').addEventListener('click', () => {
-    Clientes.abrirModal();
-  });
-
-  // ── Búsqueda de clientes ───────────────────────────
   document.getElementById('buscar-cliente')?.addEventListener('input', e => {
     Clientes.cargar(e.target.value);
   });
 
-  // ── Verificar sesión existente ─────────────────────
+  // ── Sesión existente ───────────────────────────────
   const sesionActiva = await Auth.iniciar();
-  if (sesionActiva) {
-    await _iniciarApp();
-  }
+  if (sesionActiva) await _iniciarApp();
 })();
 
 async function _iniciarApp() {
@@ -145,44 +136,36 @@ async function _iniciarApp() {
 
   Ventas.iniciar();
   Historial.iniciarFiltros();
-
   _navegarA('dashboard');
 }
 
 async function _navegarA(modulo) {
   document.querySelectorAll('.view-section').forEach(v => v.classList.add('d-none'));
-
   document.querySelectorAll('.sidebar-nav .nav-item').forEach(i => {
     i.classList.toggle('active', i.dataset.module === modulo);
   });
 
   const nombres = {
-    dashboard: 'Dashboard',
-    ventas:    'Nueva Venta',
-    historial: 'Historial',
-    productos: 'Productos',
-    clientes:  'Clientes',
+    dashboard: 'Dashboard', ventas: 'Nueva Venta',
+    historial: 'Historial', productos: 'Productos', clientes: 'Clientes',
   };
   document.getElementById('nav-current-module').textContent = nombres[modulo] ?? modulo;
 
   const seccion = document.getElementById(`view-${modulo}`);
   if (seccion) seccion.classList.remove('d-none');
 
-  if (modulo === 'dashboard')                          await _cargarDashboard();
-  if (modulo === 'historial')                          await Historial.cargar(
+  if (modulo === 'dashboard')                 await _cargarDashboard();
+  if (modulo === 'historial')                 await Historial.cargar(
     document.getElementById('filtro-desde').value,
     document.getElementById('filtro-hasta').value,
   );
-  if (modulo === 'productos' && Auth.esAdmin)          await Productos.cargar();
-  if (modulo === 'clientes')                           await Clientes.cargar();
+  if (modulo === 'productos' && Auth.esAdmin) await Productos.cargar();
+  if (modulo === 'clientes')                  await Clientes.cargar();
 }
 
 async function _cargarDashboard() {
   try {
-    const [ventasHoy, todosProductos] = await Promise.all([
-      fetchVentasHoy(),
-      fetchProductos(),
-    ]);
+    const [ventasHoy, todosProductos] = await Promise.all([fetchVentasHoy(), fetchProductos()]);
 
     const totalHoy   = ventasHoy.reduce((s, v) => s + Number(v.total), 0);
     const domicilios = ventasHoy.filter(v => v.tipo_entrega === 'domicilio').length;
@@ -200,7 +183,7 @@ async function _cargarDashboard() {
         <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid rgba(181,113,42,.08)">
           <div>
             <span style="font-family:'Lora',serif;color:var(--bronze)">#${v.id}</span>
-            <span style="font-size:.78rem;color:var(--text-dim);margin-left:.5rem">${new Date(v.fecha).toLocaleTimeString('es', {timeStyle:'short'})}</span>
+            <span style="font-size:.78rem;color:var(--text-dim);margin-left:.5rem">${new Date(v.fecha).toLocaleTimeString('es',{timeStyle:'short'})}</span>
           </div>
           <div class="d-flex align-items-center gap-2">
             <span class="badge-tipo ${v.tipo_entrega === 'domicilio' ? 'badge-domicilio' : 'badge-recogida'}">${v.tipo_entrega}</span>
