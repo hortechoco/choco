@@ -1,7 +1,4 @@
 // auth.js — login y registro por teléfono + PIN
-// Usa Supabase Auth con email sintético: {tel}@horte.internal / contraseña = PIN
-// Depende de: supabase.js
-
 const Auth = {
   _perfil: null,
 
@@ -9,14 +6,12 @@ const Auth = {
   get rol()    { return this._perfil?.rol ?? null; },
   get esAdmin(){ return this.rol === 'admin'; },
 
-  _emailDeTel: tel => `${tel.replace(/\D/g,'')}@horte.internal`,
+  _emailDeTel:  tel => `${tel.replace(/\D/g,'')}@horte.internal`,
+  _passDePin:   pin => `${pin}@@horte`,   // ← sufijo fijo; PIN 4 dígitos → 10 chars
 
   async iniciar() {
     const { data: { session } } = await db.auth.getSession();
-    if (session) {
-      await this._cargarPerfil(session.user.id);
-      return true;
-    }
+    if (session) { await this._cargarPerfil(session.user.id); return true; }
     return false;
   },
 
@@ -24,7 +19,7 @@ const Auth = {
     if (!tel || pin?.length !== 4) throw new Error('Ingresa tu teléfono y PIN de 4 dígitos');
     const { data, error } = await db.auth.signInWithPassword({
       email:    this._emailDeTel(tel),
-      password: pin,
+      password: this._passDePin(pin),
     });
     if (error) throw new Error('Teléfono o PIN incorrecto');
     await this._cargarPerfil(data.user.id);
@@ -37,7 +32,7 @@ const Auth = {
 
     const { data, error } = await db.auth.signUp({
       email:    this._emailDeTel(tel),
-      password: pin,
+      password: this._passDePin(pin),
     });
     if (error) throw new Error(error.message);
 
@@ -59,14 +54,9 @@ const Auth = {
     return data;
   },
 
-  async signOut() {
-    await db.auth.signOut();
-    this._perfil = null;
-  },
+  async signOut() { await db.auth.signOut(); this._perfil = null; },
 
-  async _cargarPerfil(userId) {
-    this._perfil = await fetchPerfil(userId);
-  },
+  async _cargarPerfil(userId) { this._perfil = await fetchPerfil(userId); },
 
   aplicarUI() {
     const badge = document.getElementById('nav-user-badge');
