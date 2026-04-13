@@ -1,5 +1,5 @@
 // app.js — punto de entrada: detecta tema, gestiona auth y navegación
-// Depende de: auth.js, ui.js, productos.js, ventas.js, historial.js
+// Depende de: auth.js, ui.js, productos.js, ventas.js, historial.js, clientes.js
 
 (async function init() {
   // ── Tema guardado ──────────────────────────────────
@@ -7,7 +7,6 @@
   document.documentElement.setAttribute('data-bs-theme', temaGuardado);
   _sincronizarIconoTema(temaGuardado);
 
-  // Handler unificado de tema (login + navbar)
   function _toggleTema() {
     const actual = document.documentElement.getAttribute('data-bs-theme');
     const nuevo  = actual === 'dark' ? 'light' : 'dark';
@@ -29,11 +28,11 @@
 
   // ── Login ──────────────────────────────────────────
   document.getElementById('btn-login').addEventListener('click', async () => {
-    const tel      = document.getElementById('login-tel').value.trim();
-    const pin      = document.getElementById('login-pin').value;
-    const errEl    = document.getElementById('auth-error');
-    const spinner  = document.getElementById('login-spinner');
-    const label    = document.getElementById('login-label');
+    const tel     = document.getElementById('login-tel').value.trim();
+    const pin     = document.getElementById('login-pin').value;
+    const errEl   = document.getElementById('auth-error');
+    const spinner = document.getElementById('login-spinner');
+    const label   = document.getElementById('login-label');
 
     errEl.classList.add('d-none');
     spinner.classList.remove('d-none');
@@ -51,7 +50,6 @@
     }
   });
 
-  // Enter en login
   ['login-tel', 'login-pin'].forEach(id => {
     document.getElementById(id)?.addEventListener('keydown', e => {
       if (e.key === 'Enter') document.getElementById('btn-login').click();
@@ -86,7 +84,6 @@
     }
   });
 
-  // Enter en register
   ['reg-ci', 'reg-nombre', 'reg-tel', 'reg-direccion', 'reg-pin'].forEach(id => {
     document.getElementById(id)?.addEventListener('keydown', e => {
       if (e.key === 'Enter') document.getElementById('btn-register').click();
@@ -110,6 +107,21 @@
     Productos.abrirModal();
   });
 
+  // ── Guardar cliente (modal) ────────────────────────
+  document.getElementById('btn-guardar-cliente').addEventListener('click', () => {
+    Clientes.guardar();
+  });
+
+  // ── Nuevo cliente ──────────────────────────────────
+  document.getElementById('btn-nuevo-cliente').addEventListener('click', () => {
+    Clientes.abrirModal();
+  });
+
+  // ── Búsqueda de clientes ───────────────────────────
+  document.getElementById('buscar-cliente')?.addEventListener('input', e => {
+    Clientes.cargar(e.target.value);
+  });
+
   // ── Verificar sesión existente ─────────────────────
   const sesionActiva = await Auth.iniciar();
   if (sesionActiva) {
@@ -124,7 +136,6 @@ async function _iniciarApp() {
   Auth.aplicarUI();
   await Productos.cargar();
 
-  // Navegación
   document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
     item.addEventListener('click', e => {
       e.preventDefault();
@@ -132,7 +143,6 @@ async function _iniciarApp() {
     });
   });
 
-  // Iniciar módulos que necesitan listeners una sola vez
   Ventas.iniciar();
   Historial.iniciarFiltros();
 
@@ -146,18 +156,25 @@ async function _navegarA(modulo) {
     i.classList.toggle('active', i.dataset.module === modulo);
   });
 
-  const nombres = { dashboard: 'Dashboard', ventas: 'Nueva Venta', historial: 'Historial', productos: 'Productos' };
+  const nombres = {
+    dashboard: 'Dashboard',
+    ventas:    'Nueva Venta',
+    historial: 'Historial',
+    productos: 'Productos',
+    clientes:  'Clientes',
+  };
   document.getElementById('nav-current-module').textContent = nombres[modulo] ?? modulo;
 
   const seccion = document.getElementById(`view-${modulo}`);
   if (seccion) seccion.classList.remove('d-none');
 
-  if (modulo === 'dashboard')  await _cargarDashboard();
-  if (modulo === 'historial')  await Historial.cargar(
+  if (modulo === 'dashboard')                          await _cargarDashboard();
+  if (modulo === 'historial')                          await Historial.cargar(
     document.getElementById('filtro-desde').value,
     document.getElementById('filtro-hasta').value,
   );
-  if (modulo === 'productos' && Auth.esAdmin) await Productos.cargar();
+  if (modulo === 'productos' && Auth.esAdmin)          await Productos.cargar();
+  if (modulo === 'clientes')                           await Clientes.cargar();
 }
 
 async function _cargarDashboard() {

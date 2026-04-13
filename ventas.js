@@ -105,8 +105,8 @@ const Ventas = {
       : 0;
     const total = subtotal + cargo;
 
-    document.getElementById('carrito-subtotal').textContent = `$${subtotal.toFixed(2)}`;
-    document.getElementById('carrito-cargo').textContent    = `$${cargo.toFixed(2)}`;
+    document.getElementById('carrito-subtotal').textContent  = `$${subtotal.toFixed(2)}`;
+    document.getElementById('carrito-cargo').textContent     = `$${cargo.toFixed(2)}`;
     document.getElementById('carrito-total-val').textContent = `$${total.toFixed(2)}`;
 
     const cargoRow = document.getElementById('cargo-row');
@@ -116,18 +116,20 @@ const Ventas = {
   async confirmar() {
     if (!this._carrito.length) return;
 
-    const subtotal = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-    const cargo    = this._tipo === 'domicilio'
+    const subtotal  = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+    const cargo     = this._tipo === 'domicilio'
       ? Number(document.getElementById('cargo-domicilio')?.value ?? 0) || 0
       : 0;
+    const clienteId = document.getElementById('venta-cliente-id')?.value || null;
 
     const ventaPayload = {
-      tipo_entrega:      this._tipo,
-      cargo_domicilio:   cargo,
-      metodo_pago:       document.getElementById('metodo-pago').value,
-      notas:             document.getElementById('venta-notas').value.trim() || null,
-      total:             subtotal + cargo,
-      fecha:             new Date().toISOString(),
+      tipo_entrega:    this._tipo,
+      cargo_domicilio: cargo,
+      metodo_pago:     document.getElementById('metodo-pago').value,
+      notas:           document.getElementById('venta-notas').value.trim() || null,
+      total:           subtotal + cargo,
+      fecha:           new Date().toISOString(),
+      cliente_id:      clienteId ? Number(clienteId) : null,
     };
 
     const detalles = this._carrito.map(i => ({
@@ -153,16 +155,27 @@ const Ventas = {
   _resetear() {
     this._carrito = [];
     this._tipo = 'recogida';
-    document.getElementById('metodo-pago').value = 'efectivo';
-    document.getElementById('venta-notas').value = '';
-    document.getElementById('cargo-domicilio').value = '0';
+    document.getElementById('metodo-pago').value      = 'efectivo';
+    document.getElementById('venta-notas').value      = '';
+    document.getElementById('cargo-domicilio').value  = '0';
     document.querySelectorAll('.btn-entrega').forEach(b => b.classList.toggle('active', b.dataset.tipo === 'recogida'));
     document.getElementById('cargo-domicilio-row').classList.add('d-none');
+
+    // Limpiar selector de cliente
+    const hiddenId     = document.getElementById('venta-cliente-id');
+    const inputCliente = document.getElementById('venta-cliente-buscar');
+    const btnLimpiar   = document.getElementById('btn-limpiar-cliente');
+    const sugerencias  = document.getElementById('venta-cliente-sugerencias');
+    if (hiddenId)     hiddenId.value = '';
+    if (inputCliente) { inputCliente.value = ''; inputCliente.readOnly = false; }
+    if (btnLimpiar)   btnLimpiar.style.display = 'none';
+    if (sugerencias)  sugerencias.innerHTML = '';
+
     this._renderCarrito();
   },
 
   _bindEventos() {
-    // Búsqueda
+    // Búsqueda de producto
     document.getElementById('buscar-producto')?.addEventListener('input', e => {
       this._renderCatalogo(e.target.value);
     });
@@ -181,7 +194,62 @@ const Ventas = {
     // Cargo domicilio
     document.getElementById('cargo-domicilio')?.addEventListener('input', () => this._actualizarTotales());
 
-    // Confirmar
+    // Confirmar venta
     document.getElementById('btn-confirmar-venta')?.addEventListener('click', () => this.confirmar());
+
+    // ── Selector de cliente ────────────────────────
+    const inputCliente = document.getElementById('venta-cliente-buscar');
+    const sugerencias  = document.getElementById('venta-cliente-sugerencias');
+    const btnLimpiar   = document.getElementById('btn-limpiar-cliente');
+    const hiddenId     = document.getElementById('venta-cliente-id');
+
+    inputCliente?.addEventListener('input', async () => {
+      const q = inputCliente.value.trim();
+      if (!q) { sugerencias.innerHTML = ''; return; }
+
+      try {
+        const lista = await fetchClientes(q);
+        if (!lista.length) {
+          sugerencias.innerHTML = `<div style="font-size:.75rem;color:var(--text-subtle);padding:.4rem .5rem">Sin resultados</div>`;
+          return;
+        }
+        sugerencias.innerHTML = `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:160px;overflow-y:auto;position:absolute;width:100%;z-index:100;top:2px">
+            ${lista.slice(0, 6).map(c => `
+              <div class="cliente-sug-item" data-id="${c.id}" data-nombre="${c.nombre_completo}"
+                   style="padding:.55rem 1rem;cursor:pointer;font-size:.82rem;color:var(--mist);transition:background .15s;display:flex;justify-content:space-between;align-items:center">
+                <span>${c.nombre_completo}</span>
+                ${c.telefono ? `<span style="color:var(--text-dim);font-size:.72rem">${c.telefono}</span>` : ''}
+              </div>`).join('')}
+          </div>`;
+
+        sugerencias.querySelectorAll('.cliente-sug-item').forEach(el => {
+          el.addEventListener('mouseenter', () => el.style.background = 'rgba(181,113,42,0.1)');
+          el.addEventListener('mouseleave', () => el.style.background = '');
+          el.addEventListener('click', () => {
+            hiddenId.value        = el.dataset.id;
+            inputCliente.value    = el.dataset.nombre;
+            inputCliente.readOnly = true;
+            sugerencias.innerHTML = '';
+            btnLimpiar.style.display = '';
+          });
+        });
+      } catch (_) { /* falla silenciosamente */ }
+    });
+
+    btnLimpiar?.addEventListener('click', () => {
+      hiddenId.value        = '';
+      inputCliente.value    = '';
+      inputCliente.readOnly = false;
+      btnLimpiar.style.display = 'none';
+      sugerencias.innerHTML = '';
+    });
+
+    // Cerrar sugerencias al hacer click fuera
+    document.addEventListener('click', e => {
+      if (!sugerencias?.contains(e.target) && e.target !== inputCliente) {
+        if (sugerencias) sugerencias.innerHTML = '';
+      }
+    });
   },
 };

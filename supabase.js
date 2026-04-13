@@ -42,7 +42,6 @@ async function deleteProducto(id) {
 
 // ── VENTAS ─────────────────────────────────────────
 async function insertVenta(ventaPayload, detalles) {
-  // Insertar cabecera
   const { data: venta, error: errVenta } = await db
     .from('ventas')
     .insert([ventaPayload])
@@ -50,7 +49,6 @@ async function insertVenta(ventaPayload, detalles) {
     .single();
   if (errVenta) throw errVenta;
 
-  // Insertar líneas de detalle
   const lineas = detalles.map(d => ({ ...d, venta_id: venta.id }));
   const { error: errDetalle } = await db.from('detalle_ventas').insert(lineas);
   if (errDetalle) throw errDetalle;
@@ -93,6 +91,51 @@ async function fetchPerfil(userId) {
     .select('*')
     .eq('id', userId)
     .single();
+  if (error) throw error;
+  return data;
+}
+
+// ── CLIENTES ───────────────────────────────────────
+async function fetchClientes(filtro = '') {
+  let q = db.from('clientes').select('*').order('nombre_completo');
+  if (filtro) q = q.ilike('nombre_completo', `%${filtro}%`);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data;
+}
+
+async function insertCliente(payload) {
+  const { data, error } = await db
+    .from('clientes')
+    .insert([payload])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+async function updateCliente(id, payload) {
+  const { data, error } = await db
+    .from('clientes')
+    .update(payload)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+async function deleteCliente(id) {
+  const { error } = await db.from('clientes').delete().eq('id', id);
+  if (error) throw error;
+}
+
+async function fetchVentasDeCliente(clienteId) {
+  const { data, error } = await db
+    .from('ventas')
+    .select('*')
+    .eq('cliente_id', clienteId)
+    .order('fecha', { ascending: false });
   if (error) throw error;
   return data;
 }

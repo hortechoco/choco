@@ -1,4 +1,8 @@
 // auth.js — login y registro por teléfono + PIN
+// Usa Supabase Auth con email sintético: {tel}@horte.internal
+// Contraseña = PIN + sufijo fijo (Supabase exige mínimo 6 chars)
+// Depende de: supabase.js
+
 const Auth = {
   _perfil: null,
 
@@ -6,12 +10,15 @@ const Auth = {
   get rol()    { return this._perfil?.rol ?? null; },
   get esAdmin(){ return this.rol === 'admin'; },
 
-  _emailDeTel:  tel => `${tel.replace(/\D/g,'')}@horte.internal`,
-  _passDePin:   pin => `${pin}@@horte`,   // ← sufijo fijo; PIN 4 dígitos → 10 chars
+  _emailDeTel: tel => `${tel.replace(/\D/g,'')}@horte.internal`,
+  _passDePin:  pin => `${pin}@@horte`,  // PIN 4 dígitos → 10 chars válidos
 
   async iniciar() {
     const { data: { session } } = await db.auth.getSession();
-    if (session) { await this._cargarPerfil(session.user.id); return true; }
+    if (session) {
+      await this._cargarPerfil(session.user.id);
+      return true;
+    }
     return false;
   },
 
@@ -54,9 +61,14 @@ const Auth = {
     return data;
   },
 
-  async signOut() { await db.auth.signOut(); this._perfil = null; },
+  async signOut() {
+    await db.auth.signOut();
+    this._perfil = null;
+  },
 
-  async _cargarPerfil(userId) { this._perfil = await fetchPerfil(userId); },
+  async _cargarPerfil(userId) {
+    this._perfil = await fetchPerfil(userId);
+  },
 
   aplicarUI() {
     const badge = document.getElementById('nav-user-badge');
