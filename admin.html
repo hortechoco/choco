@@ -380,7 +380,7 @@
     (async function () {
       // ── Verificar sesión y rol ──────────────────────
       const ok = await Auth.iniciar();
-      if (!ok || Auth.esCliente)  { window.location.href = 'login.html'; return; }
+      if (!ok || Auth.esCliente)  { window.location.href = 'index.html'; return; }
       if (!Auth.esAdmin)          { window.location.href = 'vendedor.html'; return; }
 
       // ── UI ─────────────────────────────────────────
@@ -389,7 +389,7 @@
 
       document.getElementById('btn-logout').addEventListener('click', () => {
         Auth.signOut();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
       });
 
       // ── Sidebar nav ────────────────────────────────
