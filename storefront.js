@@ -1,5 +1,5 @@
 // storefront.js — Lógica de la tienda para clientes
-// Depende de: supabase.js, ui.js, auth.js
+// Depende de: supabase.js, ui.js, auth.js, notificaciones.js
 
 const Storefront = {
   _carrito: [],
@@ -7,12 +7,10 @@ const Storefront = {
   _tipoEntrega: 'recogida',
 
   async iniciar() {
-    // Mostrar nombre del cliente
     const badge = document.getElementById('storefront-user-badge');
     if (badge) {
       badge.textContent = `${Auth.perfil?.nombre_completo} · Cliente`;
     }
-
     await this._cargarProductos();
     this._bindEventos();
   },
@@ -33,7 +31,7 @@ const Storefront = {
       : this._productos;
 
     if (!filtrados.length) {
-      container.innerHTML = `<div class="empty-state">No hay productos</div>`;
+      container.innerHTML = `<div class="empty-state">No hay productos disponibles</div>`;
       return;
     }
 
@@ -41,15 +39,15 @@ const Storefront = {
       <div class="producto-card" data-id="${p.id}">
         ${p.imagen_url
           ? `<img src="${p.imagen_url}" alt="${p.nombre}">`
-          : `<div class="pc-icon"><i class="bi bi-box-seam"></i></div>`}
+          : `<div class="pc-icon"><i class="bi bi-box-seam" style="font-size:1.2rem;color:var(--bronze)"></i></div>`}
         <div class="pc-nombre">${p.nombre}</div>
+        ${p.descripcion ? `<div class="pc-desc">${p.descripcion}</div>` : ''}
         <div class="pc-precio">$${Number(p.precio).toFixed(2)}</div>
-      </div>
-    `).join('');
+      </div>`).join('');
 
     container.querySelectorAll('.producto-card').forEach(card => {
       card.addEventListener('click', () => {
-        const prod = filtrados.find(p => String(p.id) === card.dataset.id);
+        const prod = filtrados.find(p => String(p.id) === String(card.dataset.id));
         if (prod) this._agregarAlCarrito(prod);
       });
     });
@@ -62,20 +60,24 @@ const Storefront = {
     } else {
       this._carrito.push({
         productoId: producto.id,
-        nombre: producto.nombre,
-        precio: Number(producto.precio),
-        cantidad: 1,
+        nombre:     producto.nombre,
+        precio:     Number(producto.precio),
+        cantidad:   1,
       });
     }
     this._renderCarrito();
   },
 
   _renderCarrito() {
-    const container = document.getElementById('storefront-carrito-items');
+    const container   = document.getElementById('storefront-carrito-items');
     const btnConfirmar = document.getElementById('btn-confirmar-pedido');
 
     if (!this._carrito.length) {
-      container.innerHTML = `<div class="empty-state text-center py-5"><i class="bi bi-bag" style="font-size:2rem;opacity:.2"></i><p class="mt-2 small">Aún no has agregado productos</p></div>`;
+      container.innerHTML = `
+        <div class="empty-state text-center py-5">
+          <i class="bi bi-bag" style="font-size:2rem;opacity:.2"></i>
+          <p class="mt-2 small">Aún no has agregado productos</p>
+        </div>`;
       btnConfirmar.disabled = true;
       this._actualizarTotales();
       return;
@@ -91,17 +93,16 @@ const Storefront = {
         </div>
         <span class="ci-subtotal">$${(item.precio * item.cantidad).toFixed(2)}</span>
         <button class="ci-remove" data-action="remove" data-id="${item.productoId}"><i class="bi bi-x"></i></button>
-      </div>
-    `).join('');
+      </div>`).join('');
 
     container.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = Number(btn.dataset.id);
         if (btn.dataset.action === 'inc')    this._cambiarCantidad(id, +1);
         if (btn.dataset.action === 'dec')    this._cambiarCantidad(id, -1);
-        if (btn.dataset.action === 'remove') { 
-          this._carrito = this._carrito.filter(i => i.productoId !== id); 
-          this._renderCarrito(); 
+        if (btn.dataset.action === 'remove') {
+          this._carrito = this._carrito.filter(i => i.productoId !== id);
+          this._renderCarrito();
         }
       });
     });
@@ -120,17 +121,19 @@ const Storefront = {
 
   _actualizarTotales() {
     const subtotal = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-    const cargo = this._tipoEntrega === 'domicilio'
+    const cargo    = this._tipoEntrega === 'domicilio'
       ? Number(document.getElementById('storefront-cargo')?.value ?? 0) || 0
       : 0;
     const total = subtotal + cargo;
 
-    document.getElementById('storefront-subtotal').textContent = `$${subtotal.toFixed(2)}`;
-    document.getElementById('storefront-cargo-valor').textContent = `$${cargo.toFixed(2)}`;
-    document.getElementById('storefront-total').textContent = `$${total.toFixed(2)}`;
+    document.getElementById('storefront-subtotal').textContent     = `$${subtotal.toFixed(2)}`;
+    document.getElementById('storefront-cargo-valor').textContent  = `$${cargo.toFixed(2)}`;
+    document.getElementById('storefront-total').textContent        = `$${total.toFixed(2)}`;
 
     const cargoDisplay = document.getElementById('storefront-cargo-display');
-    if (cargoDisplay) cargoDisplay.style.setProperty('display', this._tipoEntrega === 'domicilio' ? 'flex' : 'none', 'important');
+    if (cargoDisplay) {
+      cargoDisplay.style.setProperty('display', this._tipoEntrega === 'domicilio' ? 'flex' : 'none', 'important');
+    }
   },
 
   _bindEventos() {
@@ -156,36 +159,36 @@ const Storefront = {
   async confirmarPedido() {
     if (!this._carrito.length) return;
 
-    const subtotal = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-    const cargo = this._tipoEntrega === 'domicilio'
+    const subtotal   = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+    const cargo      = this._tipoEntrega === 'domicilio'
       ? Number(document.getElementById('storefront-cargo')?.value ?? 0) || 0
       : 0;
     const metodoPago = document.getElementById('storefront-metodo-pago').value;
-    const notas = document.getElementById('storefront-notas').value.trim() || null;
+    const notas      = document.getElementById('storefront-notas').value.trim() || null;
 
     const ventaPayload = {
-      tipo_entrega: this._tipoEntrega,
+      tipo_entrega:    this._tipoEntrega,
       cargo_domicilio: cargo,
-      metodo_pago: metodoPago,
-      notas: notas,
-      total: subtotal + cargo,
-      estado: 'pendiente',           // ← Pedido nuevo pendiente
-      cliente_id: Auth.perfil.id,    // ← El cliente es el usuario actual
-      vendedor_id: null,
+      metodo_pago:     metodoPago,
+      notas,
+      total:           subtotal + cargo,
+      estado:          'pendiente',        // pedido del cliente, pendiente de confirmación
+      cliente_id:      Auth.perfil.id,     // cliente = perfil autenticado
+      vendedor_id:     null,
     };
 
     const detalles = this._carrito.map(i => ({
-      producto_id: i.productoId,
-      cantidad: i.cantidad,
+      producto_id:     i.productoId,
+      cantidad:        i.cantidad,
       precio_unitario: i.precio,
-      subtotal: i.precio * i.cantidad,
+      subtotal:        i.precio * i.cantidad,
     }));
 
     UI.toggleLoader(true);
     try {
       const venta = await insertVenta(ventaPayload, detalles);
-      await notificarNuevaVenta(venta, this._carrito, Auth.perfil);
-      UI.mostrarToast('¡Pedido realizado! Te notificaremos cuando esté listo.', 'success');
+      await notificarNuevaVenta(venta, this._carrito.map(i => ({ nombre: i.nombre, cantidad: i.cantidad })), Auth.perfil);
+      UI.mostrarToast('¡Pedido enviado! Te avisaremos cuando esté listo.', 'success');
       this._resetear();
     } catch (err) {
       UI.mostrarToast('Error al realizar el pedido: ' + err.message, 'error');
@@ -195,11 +198,11 @@ const Storefront = {
   },
 
   _resetear() {
-    this._carrito = [];
+    this._carrito     = [];
     this._tipoEntrega = 'recogida';
     document.getElementById('storefront-metodo-pago').value = 'efectivo';
-    document.getElementById('storefront-notas').value = '';
-    document.getElementById('storefront-cargo').value = '0';
+    document.getElementById('storefront-notas').value       = '';
+    document.getElementById('storefront-cargo').value       = '0';
     document.querySelectorAll('#storefront-view .btn-entrega').forEach(b => {
       b.classList.toggle('active', b.dataset.tipo === 'recogida');
     });

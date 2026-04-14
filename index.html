@@ -13,7 +13,9 @@
 </head>
 <body>
 
-  <!-- LOGIN / REGISTER -->
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  LOGIN / REGISTER                              -->
+  <!-- ══════════════════════════════════════════════ -->
   <div id="login-screen" class="login-screen d-flex align-items-center justify-content-center">
     <div class="login-card">
 
@@ -50,7 +52,7 @@
         </button>
       </div>
 
-      <!-- REGISTER -->
+      <!-- REGISTER (crea clientes) -->
       <div id="tab-register" class="d-none">
         <div class="row g-3 mb-0">
           <div class="col-12">
@@ -96,7 +98,119 @@
     </div>
   </div>
 
-  <!-- APP SHELL -->
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  STOREFRONT — vista para clientes              -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div id="storefront-shell" class="d-none">
+
+    <nav class="navbar navbar-luxury sticky-top">
+      <div class="container-fluid px-4">
+        <span class="navbar-brand-luxury">
+          <span class="brand-name">Horte</span>
+          <span class="brand-sep">·</span>
+          <span class="brand-module">Tienda</span>
+        </span>
+        <div class="d-flex align-items-center gap-3">
+          <span class="user-badge" id="storefront-user-badge"></span>
+          <button class="btn-icon btn-toggle-tema" title="Cambiar tema"><i class="bi bi-sun"></i></button>
+          <button id="btn-logout-storefront" class="btn-icon" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
+        </div>
+      </div>
+    </nav>
+
+    <div id="storefront-view" class="container py-4" style="max-width:960px">
+      <div class="view-header mb-4">
+        <h1 class="view-title">Catálogo</h1>
+        <p class="view-subtitle">Selecciona productos y realiza tu pedido</p>
+      </div>
+      <div class="row g-4">
+
+        <!-- Catálogo -->
+        <div class="col-lg-6">
+          <div class="luxury-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h5 class="card-section-title mb-0">Productos</h5>
+              <input type="text" id="storefront-buscar" class="form-control form-control-sm input-luxury"
+                style="max-width:160px" placeholder="Buscar...">
+            </div>
+            <div id="storefront-catalogo" class="catalogo-grid">
+              <div class="empty-state">Cargando...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pedido -->
+        <div class="col-lg-6">
+          <div class="luxury-card p-4 d-flex flex-column" style="min-height:520px">
+            <h5 class="card-section-title mb-3">Mi pedido</h5>
+            <div id="storefront-carrito-items" class="carrito-list flex-grow-1">
+              <div class="empty-state text-center py-5">
+                <i class="bi bi-bag" style="font-size:2rem;opacity:.2"></i>
+                <p class="mt-2 small">Aún no has agregado productos</p>
+              </div>
+            </div>
+            <div class="carrito-footer mt-3">
+
+              <!-- Tipo entrega -->
+              <div class="mb-3">
+                <label class="label-luxury mb-2">Tipo de entrega</label>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-entrega active" data-tipo="recogida"><i class="bi bi-shop me-1"></i>Recogida</button>
+                  <button class="btn btn-entrega" data-tipo="domicilio"><i class="bi bi-bicycle me-1"></i>Domicilio</button>
+                </div>
+              </div>
+              <div id="storefront-cargo-row" class="mb-3 d-none">
+                <label class="label-luxury mb-1">Cargo domicilio ($)</label>
+                <input type="number" id="storefront-cargo" class="form-control input-luxury" min="0" step="0.01" value="0">
+              </div>
+
+              <!-- Pago -->
+              <div class="mb-3">
+                <label class="label-luxury mb-1">Método de pago</label>
+                <select id="storefront-metodo-pago" class="form-select input-luxury">
+                  <option value="efectivo">Efectivo</option>
+                  <option value="transferencia">Transferencia</option>
+                  <option value="tarjeta">Tarjeta</option>
+                </select>
+              </div>
+
+              <!-- Notas -->
+              <div class="mb-3">
+                <label class="label-luxury mb-1">Notas (opcional)</label>
+                <textarea id="storefront-notas" class="form-control input-luxury" rows="2"
+                  placeholder="Indicaciones especiales..."></textarea>
+              </div>
+
+              <!-- Totales -->
+              <div class="carrito-total mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="label-luxury">Subtotal</span>
+                  <span id="storefront-subtotal">$0.00</span>
+                </div>
+                <div id="storefront-cargo-display" class="d-flex justify-content-between mb-1" style="display:none!important">
+                  <span class="label-luxury">Domicilio</span>
+                  <span id="storefront-cargo-valor">$0.00</span>
+                </div>
+                <div class="d-flex justify-content-between total-line mt-2 pt-2">
+                  <strong>Total</strong>
+                  <strong id="storefront-total" class="text-gold">$0.00</strong>
+                </div>
+              </div>
+
+              <button id="btn-confirmar-pedido" class="btn btn-luxury w-100" disabled>
+                <i class="bi bi-check2-circle me-2"></i>Confirmar pedido
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  APP SHELL — admin / vendedor                  -->
+  <!-- ══════════════════════════════════════════════ -->
   <div id="app-shell" class="d-none">
 
     <!-- NAVBAR -->
@@ -126,7 +240,7 @@
           <a href="#" class="nav-item" data-module="clientes"><i class="bi bi-people"></i><span>Clientes</span></a>
           <a href="#" class="nav-item admin-only d-none" data-module="productos"><i class="bi bi-box-seam"></i><span>Productos</span></a>
         </nav>
-        <div class="sidebar-footer"><span class="sidebar-version">v1.0 · 2025</span></div>
+        <div class="sidebar-footer"><span class="sidebar-version">v2.0 · 2025</span></div>
       </aside>
 
       <!-- MAIN -->
@@ -255,8 +369,8 @@
           <div class="luxury-card">
             <div class="table-responsive">
               <table class="table table-luxury mb-0">
-                <thead><tr><th>#</th><th>Fecha</th><th>Tipo</th><th>Pago</th><th>Total</th><th>Notas</th><th></th></tr></thead>
-                <tbody id="historial-tbody"><tr><td colspan="7" class="empty-state text-center py-4">Cargando historial...</td></tr></tbody>
+                <thead><tr><th>#</th><th>Fecha</th><th>Tipo</th><th>Pago</th><th>Estado</th><th>Total</th><th>Notas</th><th></th></tr></thead>
+                <tbody id="historial-tbody"><tr><td colspan="8" class="empty-state text-center py-4">Cargando historial...</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -307,114 +421,15 @@
     </div>
   </div>
 
-  <!-- ============================================= -->
-<!-- STOREFRONT VIEW (para clientes)               -->
-<!-- ============================================= -->
-<div id="storefront-view" class="d-none">
-  <!-- NAVBAR DE TIENDA (más simple) -->
-  <nav class="navbar navbar-luxury sticky-top">
-    <div class="container-fluid px-4">
-      <span class="navbar-brand-luxury">
-        <span class="brand-name">Horte</span>
-        <span class="brand-sep">·</span>
-        <span class="brand-module">Tienda</span>
-      </span>
-      <div class="d-flex align-items-center gap-3">
-        <span class="user-badge" id="storefront-user-badge"></span>
-        <button class="btn-icon btn-toggle-tema" title="Cambiar tema"><i class="bi bi-sun"></i></button>
-        <button id="btn-storefront-logout" class="btn-icon" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
-      </div>
-    </div>
-  </nav>
-
-  <!-- CONTENIDO PRINCIPAL DE TIENDA -->
-  <main class="main-content p-4">
-    <div class="view-header mb-4">
-      <h1 class="view-title">Catálogo de Chocolates</h1>
-      <p class="view-subtitle">Selecciona tus productos favoritos</p>
-    </div>
-
-    <div class="row g-4">
-      <!-- COLUMNA IZQUIERDA: CATÁLOGO -->
-      <div class="col-lg-7">
-        <div class="luxury-card p-4">
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <h5 class="card-section-title mb-0">Nuestros productos</h5>
-            <input type="text" id="storefront-buscar" class="form-control form-control-sm input-luxury" style="max-width:200px" placeholder="Buscar...">
-          </div>
-          <div id="storefront-catalogo" class="catalogo-grid">
-            <div class="empty-state">Cargando productos...</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- COLUMNA DERECHA: CARRITO -->
-      <div class="col-lg-5">
-        <div class="luxury-card p-4 d-flex flex-column" style="min-height:500px">
-          <h5 class="card-section-title mb-3">Tu pedido</h5>
-          <div id="storefront-carrito-items" class="carrito-list flex-grow-1">
-            <div class="empty-state text-center py-5">
-              <i class="bi bi-bag" style="font-size:2rem;opacity:.2"></i>
-              <p class="mt-2 small">Aún no has agregado productos</p>
-            </div>
-          </div>
-          <div class="carrito-footer mt-3">
-            <!-- Tipo de entrega -->
-            <div class="mb-3">
-              <label class="label-luxury mb-2">Tipo de entrega</label>
-              <div class="d-flex gap-2">
-                <button class="btn btn-entrega active" data-tipo="recogida"><i class="bi bi-shop me-1"></i>Recogida</button>
-                <button class="btn btn-entrega" data-tipo="domicilio"><i class="bi bi-bicycle me-1"></i>Domicilio</button>
-              </div>
-            </div>
-            <div id="storefront-cargo-row" class="mb-3 d-none">
-              <label class="label-luxury mb-1">Cargo domicilio ($)</label>
-              <input type="number" id="storefront-cargo" class="form-control input-luxury" min="0" step="0.01" value="0">
-            </div>
-            <!-- Método de pago -->
-            <div class="mb-3">
-              <label class="label-luxury mb-1">Método de pago</label>
-              <select id="storefront-metodo-pago" class="form-select input-luxury">
-                <option value="efectivo">Efectivo</option>
-                <option value="transferencia">Transferencia</option>
-                <option value="tarjeta">Tarjeta</option>
-              </select>
-            </div>
-            <!-- Notas adicionales -->
-            <div class="mb-3">
-              <label class="label-luxury mb-1">Notas (opcional)</label>
-              <textarea id="storefront-notas" class="form-control input-luxury" rows="2" placeholder="Indicaciones especiales..."></textarea>
-            </div>
-            <!-- Totales -->
-            <div class="carrito-total mb-3">
-              <div class="d-flex justify-content-between mb-1">
-                <span class="label-luxury">Subtotal</span>
-                <span id="storefront-subtotal">$0.00</span>
-              </div>
-              <div class="d-flex justify-content-between mb-1" id="storefront-cargo-display" style="display:none!important">
-                <span class="label-luxury">Domicilio</span>
-                <span id="storefront-cargo-valor">$0.00</span>
-              </div>
-              <div class="d-flex justify-content-between total-line mt-2 pt-2">
-                <strong>Total</strong>
-                <strong id="storefront-total" class="text-gold">$0.00</strong>
-              </div>
-            </div>
-            <button id="btn-confirmar-pedido" class="btn btn-luxury w-100" disabled>
-              <i class="bi bi-check2-circle me-2"></i>Confirmar pedido
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-</div>
-
   <!-- LOADER GLOBAL -->
   <div id="global-loader" class="global-loader d-none"><div class="loader-ring"></div></div>
 
   <!-- TOASTS -->
   <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999"></div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  MODALES                                       -->
+  <!-- ══════════════════════════════════════════════ -->
 
   <!-- MODAL PRODUCTO -->
   <div class="modal fade" id="modal-producto" tabindex="-1">
@@ -469,13 +484,20 @@
         </div>
         <div class="modal-body pt-3">
           <input type="hidden" id="cliente-id">
+
+          <!-- Aviso de PIN auto-generado (solo al crear) -->
+          <div id="cliente-pin-aviso" class="pin-aviso mb-3">
+            <i class="bi bi-key me-2"></i>
+            Se generará un PIN automáticamente. Comunícaselo al cliente para que pueda ingresar.
+          </div>
+
           <div class="mb-3">
             <label class="label-luxury mb-1">Nombre completo *</label>
             <input type="text" id="cliente-nombre" class="form-control input-luxury" placeholder="Nombre y apellidos">
           </div>
           <div class="row g-3 mb-0">
             <div class="col-6">
-              <label class="label-luxury mb-1">Teléfono</label>
+              <label class="label-luxury mb-1">Teléfono *</label>
               <input type="tel" id="cliente-tel" class="form-control input-luxury" placeholder="Ej: 70012345">
             </div>
             <div class="col-6">
@@ -521,6 +543,9 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SCRIPTS                                       -->
+  <!-- ══════════════════════════════════════════════ -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="settings.js"></script>
@@ -532,8 +557,8 @@
   <script src="ventas.js"></script>
   <script src="historial.js"></script>
   <script src="clientes.js"></script>
-  <script src="app.js"></script>
   <script src="storefront.js"></script>
+  <script src="app.js"></script>
   <script>
     // Auth tabs toggle
     document.querySelectorAll('.auth-tab').forEach(tab => {

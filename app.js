@@ -1,5 +1,5 @@
 // app.js — punto de entrada: tema (cookie), auth y navegación
-// Depende de: auth.js, ui.js, productos.js, ventas.js, historial.js, clientes.js
+// Depende de: auth.js, ui.js, productos.js, ventas.js, historial.js, clientes.js, storefront.js
 
 (async function init() {
   // ── Tema (cookie, sin localStorage) ───────────────
@@ -48,8 +48,7 @@
 
     try {
       await Auth.signIn(tel, pin);
-      Auth.redirigirSegunRol();               // ← Redirige a tienda o panel según rol
-      if (!Auth.esCliente) await _iniciarApp(); // Solo inicializa panel si es vendedor/admin
+      await _iniciarApp();
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.remove('d-none');
@@ -83,8 +82,7 @@
         direccion: document.getElementById('reg-direccion').value.trim(),
         pin:       document.getElementById('reg-pin').value,
       });
-      Auth.redirigirSegunRol();               // ← Redirige a tienda (el rol por defecto es 'cliente')
-      // No se llama a _iniciarApp() porque el nuevo usuario es cliente
+      await _iniciarApp();
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.remove('d-none');
@@ -100,21 +98,21 @@
     });
   });
 
-  // ── Logout (Panel) ─────────────────────────────────
+  // ── Logout (panel admin/vendedor) ──────────────────
   document.getElementById('btn-logout').addEventListener('click', () => {
     Auth.signOut();
     document.getElementById('app-shell').classList.add('d-none');
     document.getElementById('login-screen').classList.remove('d-none');
   });
 
-  // ── Logout (Storefront) ────────────────────────────
-  document.getElementById('btn-storefront-logout')?.addEventListener('click', () => {
+  // ── Logout (storefront cliente) ────────────────────
+  document.getElementById('btn-logout-storefront')?.addEventListener('click', () => {
     Auth.signOut();
-    document.getElementById('storefront-view').classList.add('d-none');
+    document.getElementById('storefront-shell').classList.add('d-none');
     document.getElementById('login-screen').classList.remove('d-none');
   });
 
-  // ── Modales (Panel) ────────────────────────────────
+  // ── Modales ────────────────────────────────────────
   document.getElementById('btn-guardar-producto').addEventListener('click', () => Productos.guardar());
   document.getElementById('btn-nuevo-producto').addEventListener('click',   () => Productos.abrirModal());
   document.getElementById('btn-guardar-cliente').addEventListener('click',  () => Clientes.guardar());
@@ -126,20 +124,22 @@
 
   // ── Sesión existente ───────────────────────────────
   const sesionActiva = await Auth.iniciar();
-  if (sesionActiva) {
-    Auth.redirigirSegunRol();
-    if (!Auth.esCliente) await _iniciarApp();
-  }
+  if (sesionActiva) await _iniciarApp();
 })();
 
-// ─────────────────────────────────────────────────────
-// FUNCIONES AUXILIARES (fuera del IIFE)
-// ─────────────────────────────────────────────────────
-
+// ── Enrutador principal por rol ────────────────────
 async function _iniciarApp() {
   document.getElementById('login-screen').classList.add('d-none');
-  document.getElementById('app-shell').classList.remove('d-none');
 
+  // ── Clientes → storefront ──────────────────────────
+  if (Auth.esCliente) {
+    document.getElementById('storefront-shell').classList.remove('d-none');
+    await Storefront.iniciar();
+    return;
+  }
+
+  // ── Admin / Vendedor → panel de gestión ───────────
+  document.getElementById('app-shell').classList.remove('d-none');
   Auth.aplicarUI();
   await Productos.cargar();
 
@@ -185,11 +185,16 @@ async function _cargarDashboard() {
 
     const totalHoy   = ventasHoy.reduce((s, v) => s + Number(v.total), 0);
     const domicilios = ventasHoy.filter(v => v.tipo_entrega === 'domicilio').length;
+    const pendientes = ventasHoy.filter(v => v.estado === 'pendiente').length;
 
     document.getElementById('stat-ventas-hoy').textContent  = ventasHoy.length;
     document.getElementById('stat-total-hoy').textContent   = `$${totalHoy.toFixed(2)}`;
     document.getElementById('stat-productos').textContent   = todosProductos.length;
     document.getElementById('stat-domicilios').textContent  = domicilios;
+
+    // Badge de pendientes (si existe el elemento)
+    const statPendientes = document.getElementById('stat-pendientes');
+    if (statPendientes) statPendientes.textContent = pendientes;
 
     const ulBox = document.getElementById('dashboard-ultimas-ventas');
     if (!ventasHoy.length) {
@@ -202,6 +207,7 @@ async function _cargarDashboard() {
             <span style="font-size:.78rem;color:var(--text-dim);margin-left:.5rem">${new Date(v.fecha).toLocaleTimeString('es',{timeStyle:'short'})}</span>
           </div>
           <div class="d-flex align-items-center gap-2">
+            <span class="badge-estado badge-estado-${v.estado}">${v.estado}</span>
             <span class="badge-tipo ${v.tipo_entrega === 'domicilio' ? 'badge-domicilio' : 'badge-recogida'}">${v.tipo_entrega}</span>
             <span class="text-gold" style="font-weight:500">$${Number(v.total).toFixed(2)}</span>
           </div>

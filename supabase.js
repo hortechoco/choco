@@ -25,6 +25,17 @@ async function insertPerfil(payload) {
   return data;
 }
 
+async function updatePerfil(id, payload) {
+  const { data, error } = await db.from('perfiles').update(payload).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function deletePerfil(id) {
+  const { error } = await db.from('perfiles').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ── PRODUCTOS ──────────────────────────────────────
 async function fetchProductos() {
   const { data, error } = await db.from('productos').select('*').order('nombre');
@@ -83,20 +94,52 @@ async function fetchVentasHoy() {
   return fetchVentas({ desde: hoy, hasta: hoy });
 }
 
-// AGREGAR nueva función para obtener clientes (ahora de perfiles)
+// ── CLIENTES (perfiles con rol = 'cliente') ────────
+// La tabla clientes fue eliminada. Los clientes son
+// perfiles con rol='cliente'. Todas las funciones
+// aquí operan sobre la tabla perfiles filtrada.
+
 async function fetchClientes(filtro = '') {
-  let q = db.from('perfiles').select('*').order('nombre_completo');
+  let q = db.from('perfiles').select('*')
+    .eq('rol', 'cliente').order('nombre_completo');
   if (filtro) q = q.ilike('nombre_completo', `%${filtro}%`);
   const { data, error } = await q;
   if (error) throw error;
   return data;
 }
 
-// MODIFICAR fetchVentasDeCliente para que use perfiles
+async function insertCliente(payload) {
+  // payload viene de clientes.js — añadimos rol y pin por defecto
+  const full = {
+    ...payload,
+    rol: 'cliente',
+    pin: payload.pin || _generarPin(),
+    telefono: payload.telefono || `tmp_${Date.now()}`,
+  };
+  const { data, error } = await db.from('perfiles').insert([full]).select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function updateCliente(id, payload) {
+  // No tocamos pin ni rol al editar desde el módulo de clientes
+  const { pin: _pin, rol: _rol, ...safe } = payload;
+  return updatePerfil(id, safe);
+}
+
+async function deleteCliente(id) {
+  return deletePerfil(id);
+}
+
 async function fetchVentasDeCliente(clienteId) {
   const { data, error } = await db
     .from('ventas').select('*').eq('cliente_id', clienteId)
     .order('fecha', { ascending: false });
   if (error) throw error;
   return data;
+}
+
+// ── HELPERS ────────────────────────────────────────
+function _generarPin() {
+  return String(Math.floor(1000 + Math.random() * 9000));
 }

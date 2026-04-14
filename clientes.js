@@ -1,4 +1,4 @@
-// clientes.js — gestión del directorio de clientes
+// clientes.js — directorio de clientes (perfiles con rol='cliente')
 // Depende de: supabase.js, ui.js
 
 const Clientes = {
@@ -29,7 +29,7 @@ const Clientes = {
         <td style="font-family:'Lora',serif;color:var(--bronze)">#${c.id}</td>
         <td style="font-weight:400">${c.nombre_completo}</td>
         <td style="color:var(--text-body);font-size:.82rem">${c.telefono ?? '—'}</td>
-        <td style="color:var(--text-body);font-size:.82rem">${c.ci ?? '—'}</td>
+        <td style="color:var(--text-body);font-size:.82rem">${c.carnet ?? '—'}</td>
         <td style="color:var(--text-dim);font-size:.78rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.direccion ?? '—'}</td>
         <td class="text-end">
           <button class="btn btn-sm btn-luxury-outline me-1" data-action="historial" data-id="${c.id}" title="Ver compras">
@@ -60,23 +60,30 @@ const Clientes = {
     document.getElementById('cliente-id').value          = cliente?.id ?? '';
     document.getElementById('cliente-nombre').value      = cliente?.nombre_completo ?? '';
     document.getElementById('cliente-tel').value         = cliente?.telefono ?? '';
-    document.getElementById('cliente-ci').value          = cliente?.ci ?? '';
+    document.getElementById('cliente-ci').value          = cliente?.carnet ?? '';       // carnet en BD
     document.getElementById('cliente-direccion').value   = cliente?.direccion ?? '';
     document.getElementById('cliente-notas').value       = cliente?.notas ?? '';
+
+    // Mostrar/ocultar aviso de PIN según si es nuevo o edición
+    const pinAviso = document.getElementById('cliente-pin-aviso');
+    if (pinAviso) pinAviso.classList.toggle('d-none', !!cliente);
 
     if (!this._modal) this._modal = new bootstrap.Modal(document.getElementById('modal-cliente'));
     this._modal.show();
   },
 
   async guardar() {
-    const id     = document.getElementById('cliente-id').value;
-    const nombre = document.getElementById('cliente-nombre').value.trim();
-    if (!nombre) return UI.mostrarToast('El nombre es obligatorio', 'error');
+    const id      = document.getElementById('cliente-id').value;
+    const nombre  = document.getElementById('cliente-nombre').value.trim();
+    const telefono = document.getElementById('cliente-tel').value.trim();
+
+    if (!nombre)   return UI.mostrarToast('El nombre es obligatorio', 'error');
+    if (!id && !telefono) return UI.mostrarToast('El teléfono es obligatorio para crear un cliente', 'error');
 
     const payload = {
       nombre_completo: nombre,
-      telefono:  document.getElementById('cliente-tel').value.trim()      || null,
-      ci:        document.getElementById('cliente-ci').value.trim()        || null,
+      telefono:  telefono || null,
+      carnet:    document.getElementById('cliente-ci').value.trim()        || null,
       direccion: document.getElementById('cliente-direccion').value.trim() || null,
       notas:     document.getElementById('cliente-notas').value.trim()     || null,
     };
@@ -91,8 +98,11 @@ const Clientes = {
         await updateCliente(id, payload);
         UI.mostrarToast('Cliente actualizado', 'success');
       } else {
-        await insertCliente(payload);
-        UI.mostrarToast('Cliente registrado', 'success');
+        const nuevo = await insertCliente(payload);
+        UI.mostrarToast(
+          `Cliente registrado — PIN de acceso: ${nuevo.pin}`,
+          'info'
+        );
       }
       this._modal?.hide();
       await this.cargar();
@@ -144,11 +154,7 @@ const Clientes = {
         <table class="detalle-items-table w-100">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Fecha</th>
-              <th>Tipo</th>
-              <th>Pago</th>
-              <th class="text-end">Total</th>
+              <th>#</th><th>Fecha</th><th>Tipo</th><th>Pago</th><th>Estado</th><th class="text-end">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -158,6 +164,7 @@ const Clientes = {
                 <td style="font-size:.78rem">${new Date(v.fecha).toLocaleString('es',{dateStyle:'short',timeStyle:'short'})}</td>
                 <td><span class="badge-tipo ${v.tipo_entrega === 'domicilio' ? 'badge-domicilio' : 'badge-recogida'}">${v.tipo_entrega}</span></td>
                 <td><span class="badge-pago">${v.metodo_pago}</span></td>
+                <td><span class="badge-estado badge-estado-${v.estado}">${v.estado}</span></td>
                 <td class="text-end text-gold">$${Number(v.total).toFixed(2)}</td>
               </tr>`).join('')}
           </tbody>

@@ -6,13 +6,13 @@ const Historial = {
 
   async cargar(desde, hasta) {
     const tbody = document.getElementById('historial-tbody');
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state text-center py-4">Cargando...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state text-center py-4">Cargando...</td></tr>`;
 
     try {
       const ventas = await fetchVentas({ desde, hasta });
 
       if (!ventas.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="empty-state text-center py-4">Sin ventas en el período</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="empty-state text-center py-4">Sin ventas en el período</td></tr>`;
         return;
       }
 
@@ -27,8 +27,9 @@ const Historial = {
             <td style="font-size:.8rem;color:var(--text-body)">${fecha}</td>
             <td>${tipoBadge}</td>
             <td><span class="badge-pago">${v.metodo_pago}</span></td>
+            <td><span class="badge-estado badge-estado-${v.estado}">${v.estado}</span></td>
             <td class="text-gold" style="font-weight:500">$${Number(v.total).toFixed(2)}</td>
-            <td style="font-size:.78rem;color:var(--text-dim);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.notas ?? '—'}</td>
+            <td style="font-size:.78rem;color:var(--text-dim);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.notas ?? '—'}</td>
             <td class="text-end">
               <button class="btn btn-sm btn-luxury-outline" data-action="detalle" data-id="${v.id}">
                 <i class="bi bi-eye"></i>
@@ -42,7 +43,7 @@ const Historial = {
       });
 
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="7" class="empty-state text-center py-4">Error: ${err.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="empty-state text-center py-4">Error: ${err.message}</td></tr>`;
     }
   },
 
@@ -63,6 +64,7 @@ const Historial = {
           <div class="detalle-field"><label>Fecha</label><span>${fecha}</span></div>
           <div class="detalle-field"><label>Tipo</label><span>${venta.tipo_entrega}</span></div>
           <div class="detalle-field"><label>Pago</label><span>${venta.metodo_pago}</span></div>
+          <div class="detalle-field"><label>Estado</label><span class="badge-estado badge-estado-${venta.estado}">${venta.estado}</span></div>
           <div class="detalle-field"><label>Total</label><span class="text-gold" style="font-size:1rem;font-family:'Lora',serif">$${Number(venta.total).toFixed(2)}</span></div>
         </div>
         ${venta.notas ? `<div class="mb-3" style="font-size:.82rem;color:var(--text-body);font-style:italic">"${venta.notas}"</div>` : ''}
@@ -86,7 +88,7 @@ const Historial = {
   },
 
   iniciarFiltros() {
-    const hoy = new Date().toISOString().split('T')[0];
+    const hoy   = new Date().toISOString().split('T')[0];
     const hace7 = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
     document.getElementById('filtro-desde').value = hace7;
     document.getElementById('filtro-hasta').value = hoy;
