@@ -138,12 +138,12 @@
   <script>
     (async function () {
       const ok = await Auth.iniciar();
-      if (!ok)             { window.location.href = 'login.html'; return; }
+      if (!ok)             { window.location.href = 'index.html'; return; }
       if (!Auth.esCliente) { window.location.href = Auth.esAdmin ? 'admin.html' : 'vendedor.html'; return; }
 
       document.getElementById('btn-logout-storefront').addEventListener('click', () => {
         Auth.signOut();
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
       });
 
       await Storefront.iniciar();
