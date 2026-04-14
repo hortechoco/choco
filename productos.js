@@ -1,9 +1,10 @@
-// productos.js — renderizar tabla de productos, modal CRUD
+// productos.js — catálogo, modal CRUD + subida de imagen local
 // Depende de: supabase.js, ui.js
 
 const Productos = {
   _lista: [],
   _modal: null,
+  _imageSetupDone: false,
 
   async cargar() {
     try {
@@ -27,7 +28,9 @@ const Productos = {
       <tr>
         <td>
           <div class="d-flex align-items-center gap-2">
-            ${p.imagen_url ? `<img src="${p.imagen_url}" width="36" height="36" style="border-radius:6px;object-fit:cover;opacity:.85">` : '<div style="width:36px;height:36px;border-radius:6px;background:rgba(181,113,42,.12);display:flex;align-items:center;justify-content:center"><i class="bi bi-box-seam" style="font-size:.9rem;color:var(--bronze)"></i></div>'}
+            ${p.imagen_url
+              ? `<img src="${p.imagen_url}" width="36" height="36" style="border-radius:6px;object-fit:cover;opacity:.85;flex-shrink:0">`
+              : `<div style="width:36px;height:36px;border-radius:6px;background:rgba(181,113,42,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="bi bi-box-seam" style="font-size:.9rem;color:var(--bronze)"></i></div>`}
             <span style="font-weight:400">${p.nombre}</span>
           </div>
         </td>
@@ -35,12 +38,12 @@ const Productos = {
         <td class="text-gold" style="font-weight:500">$${Number(p.precio).toFixed(2)}</td>
         <td style="color:var(--text-subtle);font-size:.78rem">${new Date(p.created_at).toLocaleDateString('es')}</td>
         <td class="text-end">
-          <button class="btn btn-sm btn-luxury-outline me-1" data-action="editar" data-id="${p.id}"><i class="bi bi-pencil"></i></button>
-          <button class="btn btn-sm btn-luxury-outline" data-action="eliminar" data-id="${p.id}" style="border-color:rgba(224,112,112,.25);color:#e07070"><i class="bi bi-trash"></i></button>
+          <button class="btn btn-sm btn-luxury-outline me-1" data-action="editar"   data-id="${p.id}"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-luxury-outline"       data-action="eliminar" data-id="${p.id}"
+                  style="border-color:rgba(224,112,112,.25);color:#e07070"><i class="bi bi-trash"></i></button>
         </td>
       </tr>`).join('');
 
-    // Eventos de la tabla
     tbody.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', () => {
         const { action, id } = btn.dataset;
@@ -57,10 +60,72 @@ const Productos = {
     document.getElementById('producto-nombre').value      = producto?.nombre ?? '';
     document.getElementById('producto-descripcion').value = producto?.descripcion ?? '';
     document.getElementById('producto-precio').value      = producto?.precio ?? '';
-    document.getElementById('producto-imagen').value      = producto?.imagen_url ?? '';
 
-    if (!this._modal) this._modal = new bootstrap.Modal(document.getElementById('modal-producto'));
+    // Imagen
+    const imgUrl  = producto?.imagen_url ?? '';
+    const imgInput = document.getElementById('producto-imagen');
+    const preview  = document.getElementById('producto-imagen-preview');
+    const thumb    = document.getElementById('producto-imagen-thumb');
+    const fileInput = document.getElementById('producto-imagen-file');
+
+    if (imgInput)  imgInput.value = imgUrl;
+    if (fileInput) fileInput.value = '';
+    if (preview && thumb) {
+      if (imgUrl) { thumb.src = imgUrl; preview.style.display = 'flex'; }
+      else        { preview.style.display = 'none'; }
+    }
+
+    if (!this._modal) {
+      this._modal = new bootstrap.Modal(document.getElementById('modal-producto'));
+      this._setupImageUpload();
+    }
     this._modal.show();
+  },
+
+  _setupImageUpload() {
+    if (this._imageSetupDone) return;
+    this._imageSetupDone = true;
+
+    const fileInput = document.getElementById('producto-imagen-file');
+    const imgInput  = document.getElementById('producto-imagen');
+    const preview   = document.getElementById('producto-imagen-preview');
+    const thumb     = document.getElementById('producto-imagen-thumb');
+    const btnClear  = document.getElementById('btn-clear-imagen');
+
+    fileInput?.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) {
+        UI.mostrarToast('La imagen no debe superar 2 MB', 'error');
+        fileInput.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = evt => {
+        const dataUrl = evt.target.result;
+        if (imgInput)  imgInput.value = dataUrl;
+        if (thumb)     thumb.src = dataUrl;
+        if (preview)   preview.style.display = 'flex';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // También actualizar preview si se escribe URL manualmente
+    imgInput?.addEventListener('input', () => {
+      const url = imgInput.value.trim();
+      if (url && !url.startsWith('data:')) {
+        if (thumb)   thumb.src = url;
+        if (preview) preview.style.display = 'flex';
+      } else if (!url) {
+        if (preview) preview.style.display = 'none';
+      }
+    });
+
+    btnClear?.addEventListener('click', () => {
+      if (imgInput)  imgInput.value = '';
+      if (fileInput) fileInput.value = '';
+      if (preview)   preview.style.display = 'none';
+    });
   },
 
   async guardar() {

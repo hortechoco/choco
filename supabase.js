@@ -36,6 +36,15 @@ async function deletePerfil(id) {
   if (error) throw error;
 }
 
+// Todos los perfiles (admin: gestión de usuarios)
+async function fetchPerfiles(filtro = '') {
+  let q = db.from('perfiles').select('*').order('nombre_completo');
+  if (filtro) q = q.ilike('nombre_completo', `%${filtro}%`);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data;
+}
+
 // ── PRODUCTOS ──────────────────────────────────────
 async function fetchProductos() {
   const { data, error } = await db.from('productos').select('*').order('nombre');
@@ -95,10 +104,6 @@ async function fetchVentasHoy() {
 }
 
 // ── CLIENTES (perfiles con rol = 'cliente') ────────
-// La tabla clientes fue eliminada. Los clientes son
-// perfiles con rol='cliente'. Todas las funciones
-// aquí operan sobre la tabla perfiles filtrada.
-
 async function fetchClientes(filtro = '') {
   let q = db.from('perfiles').select('*')
     .eq('rol', 'cliente').order('nombre_completo');
@@ -109,7 +114,6 @@ async function fetchClientes(filtro = '') {
 }
 
 async function insertCliente(payload) {
-  // payload viene de clientes.js — añadimos rol y pin por defecto
   const full = {
     ...payload,
     rol: 'cliente',
@@ -122,7 +126,6 @@ async function insertCliente(payload) {
 }
 
 async function updateCliente(id, payload) {
-  // No tocamos pin ni rol al editar desde el módulo de clientes
   const { pin: _pin, rol: _rol, ...safe } = payload;
   return updatePerfil(id, safe);
 }
