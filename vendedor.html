@@ -32,6 +32,10 @@
     <div class="navbar-nav-row">
       <div class="navbar-nav-scroll">
         <a href="#" class="nav-pill active" data-module="dashboard"><i class="bi bi-grid-1x2"></i><span>Dashboard</span></a>
+        <a href="#" class="nav-pill" data-module="pedidos" style="position:relative">
+          <i class="bi bi-inbox"></i><span>Pedidos</span>
+          <span id="pedidos-count-badge" style="display:none;position:absolute;top:2px;right:2px;background:var(--bronze);color:#fff;font-size:.55rem;font-weight:600;min-width:16px;height:16px;border-radius:8px;line-height:16px;text-align:center;padding:0 4px"></span>
+        </a>
         <a href="#" class="nav-pill" data-module="ventas"><i class="bi bi-bag-plus"></i><span>Nueva venta</span></a>
         <a href="#" class="nav-pill" data-module="historial"><i class="bi bi-clock-history"></i><span>Historial</span></a>
         <a href="#" class="nav-pill" data-module="clientes"><i class="bi bi-people"></i><span>Clientes</span></a>
@@ -65,6 +69,26 @@
             <h5 class="card-section-title mb-3">Catálogo (top 5 por precio)</h5>
             <div id="dashboard-top-productos"><div class="empty-state">Cargando...</div></div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PEDIDOS DE CLIENTES -->
+    <section id="view-pedidos" class="view-section d-none">
+      <div class="view-header mb-4">
+        <h1 class="view-title">Pedidos</h1>
+        <p class="view-subtitle">Solicitudes pendientes de clientes</p>
+      </div>
+      <div class="luxury-card">
+        <div class="table-responsive">
+          <table class="table table-luxury mb-0">
+            <thead>
+              <tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Pago</th><th>Total</th><th>Estado</th><th></th></tr>
+            </thead>
+            <tbody id="pedidos-tbody">
+              <tr><td colspan="8" class="empty-state text-center py-4">Cargando...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -312,6 +336,102 @@
     </div>
   </div>
 
+  <!-- Gestionar Pedido -->
+  <div class="modal fade" id="modal-gestionar-pedido" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content luxury-modal">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title font-lora">Gestionar pedido <span id="pedido-id-label" style="color:var(--bronze)"></span></h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body pt-3">
+          <div class="row g-3 mb-3">
+            <!-- Info cliente -->
+            <div class="col-md-6">
+              <div class="luxury-card p-3" style="border-radius:10px">
+                <div class="label-luxury mb-2"><i class="bi bi-person me-1"></i>Cliente</div>
+                <div style="font-size:.9rem;font-weight:400" id="pedido-cliente-label">—</div>
+                <div style="font-size:.78rem;color:var(--text-dim);margin-top:.25rem">
+                  <i class="bi bi-telephone me-1"></i><span id="pedido-tel-label">—</span>
+                </div>
+                <div style="font-size:.78rem;color:var(--text-dim);margin-top:.15rem">
+                  <i class="bi bi-geo-alt me-1"></i><span id="pedido-dir-label">—</span>
+                </div>
+              </div>
+            </div>
+            <!-- Info pedido -->
+            <div class="col-md-6">
+              <div class="luxury-card p-3" style="border-radius:10px">
+                <div class="detalle-grid" style="grid-template-columns:1fr 1fr;gap:.5rem">
+                  <div class="detalle-field"><label>Fecha</label><span id="pedido-fecha-label">—</span></div>
+                  <div class="detalle-field"><label>Tipo</label><span id="pedido-tipo-label">—</span></div>
+                  <div class="detalle-field"><label>Pago</label><span id="pedido-pago-label">—</span></div>
+                  <div class="detalle-field"><label>Notas</label><span id="pedido-notas-label" style="font-style:italic;font-size:.78rem">—</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Items -->
+          <div class="mb-3">
+            <div class="label-luxury mb-2">Productos del pedido</div>
+            <table class="detalle-items-table w-100">
+              <thead><tr><th>Producto</th><th class="text-center">Cant.</th><th class="text-end">Unitario</th><th class="text-end">Subtotal</th></tr></thead>
+              <tbody id="pedido-items-body"></tbody>
+            </table>
+          </div>
+
+          <hr style="border-color:var(--border);margin:1rem 0">
+
+          <!-- Campos editables -->
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="label-luxury mb-1">Estado</label>
+              <select id="pedido-estado" class="form-select input-luxury">
+                <option value="pendiente">Pendiente</option>
+                <option value="en_proceso">En proceso</option>
+                <option value="completado">Completado</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div class="col-md-4 d-none" id="pedido-domicilio-row">
+              <label class="label-luxury mb-1">Cargo domicilio ($)</label>
+              <input type="number" id="pedido-cargo-domicilio" class="form-control input-luxury" min="0" step="0.01" value="0">
+            </div>
+            <div class="col-md-4 d-none" id="pedido-transf-row">
+              <label class="label-luxury mb-1">Cargo transferencia ($)</label>
+              <input type="number" id="pedido-cargo-transferencia" class="form-control input-luxury" min="0" step="0.01" value="0">
+            </div>
+          </div>
+
+          <!-- Totales resumen -->
+          <div class="carrito-total mt-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="label-luxury">Subtotal</span><span id="pedido-subtotal">$0.00</span>
+            </div>
+            <div id="pedido-cargo-row-display" style="display:none!important" class="d-flex justify-content-between mb-1">
+              <span class="label-luxury">Domicilio</span><span id="pedido-cargo-display">$0.00</span>
+            </div>
+            <div id="pedido-transf-row-display" style="display:none!important" class="d-flex justify-content-between mb-1">
+              <span class="label-luxury">Transf.</span><span id="pedido-transf-display">$0.00</span>
+            </div>
+            <div class="d-flex justify-content-between total-line mt-2 pt-2">
+              <strong>Total</strong>
+              <strong id="pedido-total-val" class="text-gold">$0.00</strong>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-luxury-outline" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" id="btn-guardar-pedido" class="btn btn-luxury">
+            <span id="btn-guardar-pedido-label">Guardar cambios</span>
+            <span id="btn-guardar-pedido-spinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -323,6 +443,7 @@
   <script src="ventas.js"></script>
   <script src="historial.js"></script>
   <script src="clientes.js"></script>
+  <script src="pedidos.js"></script>
   <script src="panel.js"></script>
   <script>
     (async function () {
@@ -344,6 +465,8 @@
       document.getElementById('btn-nuevo-cliente')?.addEventListener('click', () => Clientes.abrirModal());
       document.getElementById('btn-guardar-cliente')?.addEventListener('click', () => Clientes.guardar());
       document.getElementById('buscar-cliente')?.addEventListener('input', e => Clientes.cargar(e.target.value));
+
+      Pedidos.iniciarEscuchas();
 
       await Productos.cargar();
       await Ventas.iniciar();

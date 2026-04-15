@@ -76,6 +76,7 @@ function _navegarA(modulo) {
     document.getElementById('filtro-hasta').value,
   );
   if (modulo === 'clientes')                             Clientes.cargar();
+  if (modulo === 'pedidos'   && typeof Pedidos   !== 'undefined') Pedidos.cargar();
   if (modulo === 'productos' && typeof Productos !== 'undefined') Productos.cargar();
   if (modulo === 'usuarios'  && typeof Usuarios  !== 'undefined') Usuarios.cargar();
   if (modulo === 'monedas'   && typeof Monedas   !== 'undefined') Monedas.cargar();

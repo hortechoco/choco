@@ -128,6 +128,23 @@ async function fetchVentasHoy() {
   return fetchVentas({ desde: hoy, hasta: hoy });
 }
 
+// ── PEDIDOS (ventas pendientes/en_proceso con datos de cliente) ────
+async function fetchPedidosPendientes() {
+  const { data, error } = await db
+    .from('ventas')
+    .select('*, perfiles!ventas_cliente_id_fkey(nombre_completo, telefono, direccion, carnet)')
+    .in('estado', ['pendiente', 'en_proceso'])
+    .order('fecha', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+async function updateVenta(id, payload) {
+  const { data, error } = await db.from('ventas').update(payload).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
 // ── CLIENTES (perfiles con rol = 'cliente') ────────
 async function fetchClientes(filtro = '') {
   let q = db.from('perfiles').select('*')
