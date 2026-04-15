@@ -148,6 +148,22 @@
                 <input type="number" id="cargo-domicilio" class="form-control input-luxury" min="0" step="0.01" value="0">
               </div>
 
+              <!-- Fecha, hora y dirección de entrega -->
+              <div class="row g-2 mb-3">
+                <div class="col-7">
+                  <label class="label-luxury mb-1">Fecha de entrega *</label>
+                  <input type="date" id="venta-fecha-entrega" class="form-control input-luxury">
+                </div>
+                <div class="col-5">
+                  <label class="label-luxury mb-1">Hora (opcional)</label>
+                  <input type="time" id="venta-hora-entrega" class="form-control input-luxury">
+                </div>
+              </div>
+              <div id="venta-direccion-row" class="mb-3 d-none">
+                <label class="label-luxury mb-1">Dirección de entrega</label>
+                <input type="text" id="venta-direccion-entrega" class="form-control input-luxury" placeholder="Calle, número, referencia">
+              </div>
+
               <!-- Pago -->
               <div class="mb-2">
                 <label class="label-luxury mb-1">Método de pago</label>

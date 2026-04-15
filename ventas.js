@@ -11,6 +11,10 @@ const Ventas = {
     await this._cargarMonedas();
     await this._renderCatalogo();
     this._bindEventos();
+    // Mínimo hoy para fecha de entrega
+    const hoy = new Date().toISOString().split('T')[0];
+    const fechaInput = document.getElementById('venta-fecha-entrega');
+    if (fechaInput) fechaInput.min = hoy;
   },
 
   async _cargarMonedas() {
@@ -181,6 +185,14 @@ const Ventas = {
         : val;
     }
 
+    // Fecha, hora y dirección de entrega
+    const fechaEntrega = document.getElementById('venta-fecha-entrega')?.value || null;
+    const horaEntrega  = document.getElementById('venta-hora-entrega')?.value  || null;
+    let   direccionEntrega = null;
+    if (this._tipo === 'domicilio') {
+      direccionEntrega = document.getElementById('venta-direccion-entrega')?.value.trim() || null;
+    }
+
     // Moneda
     const monedaSel = document.getElementById('moneda-pago');
     const opt = monedaSel?.selectedOptions[0];
@@ -202,6 +214,9 @@ const Ventas = {
       total:               subtotal + cargo + cargoTransf,
       fecha:               new Date().toISOString(),
       cliente_id:          clienteId ? Number(clienteId) : null,
+      fecha_entrega:       fechaEntrega,
+      hora_entrega:        horaEntrega,
+      direccion_entrega:   direccionEntrega,
     };
 
     const detalles = this._carrito.map(i => ({
@@ -231,6 +246,14 @@ const Ventas = {
     document.getElementById('metodo-pago').value      = 'efectivo';
     document.getElementById('venta-notas').value      = '';
     document.getElementById('cargo-domicilio').value  = '0';
+    // Reset fecha/hora/dirección
+    const fechaEl = document.getElementById('venta-fecha-entrega');
+    const horaEl  = document.getElementById('venta-hora-entrega');
+    const dirEl   = document.getElementById('venta-direccion-entrega');
+    if (fechaEl) fechaEl.value = '';
+    if (horaEl)  horaEl.value  = '';
+    if (dirEl)   dirEl.value   = '';
+    document.getElementById('venta-direccion-row')?.classList.add('d-none');
     document.querySelectorAll('#view-ventas .btn-entrega[data-tipo]').forEach(b =>
       b.classList.toggle('active', b.dataset.tipo === 'recogida'));
     document.getElementById('cargo-domicilio-row').classList.add('d-none');
@@ -271,6 +294,7 @@ const Ventas = {
         btn.classList.add('active');
         this._tipo = btn.dataset.tipo;
         document.getElementById('cargo-domicilio-row').classList.toggle('d-none', this._tipo !== 'domicilio');
+        document.getElementById('venta-direccion-row')?.classList.toggle('d-none', this._tipo !== 'domicilio');
         this._actualizarTotales();
       });
     });
@@ -322,7 +346,7 @@ const Ventas = {
         sugerencias.innerHTML = `
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:160px;overflow-y:auto;position:absolute;width:100%;z-index:100;top:2px">
             ${lista.slice(0, 6).map(c => `
-              <div class="cliente-sug-item" data-id="${c.id}" data-nombre="${c.nombre_completo}"
+              <div class="cliente-sug-item" data-id="${c.id}" data-nombre="${c.nombre_completo}" data-dir="${c.direccion ?? ''}"
                    style="padding:.55rem 1rem;cursor:pointer;font-size:.82rem;color:var(--mist);transition:background .15s;display:flex;justify-content:space-between;align-items:center">
                 <span>${c.nombre_completo}</span>
                 ${c.telefono ? `<span style="color:var(--text-dim);font-size:.72rem">${c.telefono}</span>` : ''}
@@ -338,6 +362,13 @@ const Ventas = {
             inputCliente.readOnly = true;
             sugerencias.innerHTML = '';
             btnLimpiar.style.display = '';
+            // Pre-rellenar dirección si el tipo es domicilio y el campo está vacío
+            if (this._tipo === 'domicilio') {
+              const dirInput = document.getElementById('venta-direccion-entrega');
+              if (dirInput && !dirInput.value.trim() && el.dataset.dir) {
+                dirInput.value = el.dataset.dir;
+              }
+            }
           });
         });
       } catch (_) { /* falla silenciosamente */ }

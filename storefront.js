@@ -144,25 +144,17 @@ const Storefront = {
   },
 
   _actualizarTotales() {
-    const subtotal = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-    const cargo    = this._tipoEntrega === 'domicilio'
-      ? Number(document.getElementById('storefront-cargo')?.value ?? 0) || 0
-      : 0;
-    const total = subtotal + cargo;
+    // Los cargos (domicilio, transferencia) los aplica el vendedor al gestionar el pedido.
+    // El cliente solo ve el subtotal de los productos seleccionados.
+    const total = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
 
-    document.getElementById('storefront-subtotal').textContent    = `$${subtotal.toFixed(2)}`;
-    document.getElementById('storefront-cargo-valor').textContent = `$${cargo.toFixed(2)}`;
-    document.getElementById('storefront-total').textContent       = `$${total.toFixed(2)}`;
-
-    const cargoDisplay = document.getElementById('storefront-cargo-display');
-    if (cargoDisplay) {
-      cargoDisplay.style.setProperty('display', this._tipoEntrega === 'domicilio' ? 'flex' : 'none', 'important');
-    }
+    document.getElementById('storefront-subtotal').textContent = `$${total.toFixed(2)}`;
+    document.getElementById('storefront-total').textContent   = `$${total.toFixed(2)}`;
 
     // Equivalente moneda
     const monedaSel = document.getElementById('storefront-moneda');
-    const opt = monedaSel?.selectedOptions[0];
-    const tasa = parseFloat(opt?.dataset.tasa ?? 1);
+    const opt    = monedaSel?.selectedOptions[0];
+    const tasa   = parseFloat(opt?.dataset.tasa ?? 1);
     const simbolo = opt?.dataset.simbolo ?? '$';
     const nombreM = opt?.dataset.nombre ?? '';
     const equivEl = document.getElementById('storefront-moneda-equivalente');
@@ -187,7 +179,6 @@ const Storefront = {
         document.querySelectorAll('#storefront-view .btn-entrega[data-tipo]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         this._tipoEntrega = btn.dataset.tipo;
-        document.getElementById('storefront-cargo-row').classList.toggle('d-none', this._tipoEntrega !== 'domicilio');
         document.getElementById('storefront-direccion-row').classList.toggle('d-none', this._tipoEntrega !== 'domicilio');
         this._actualizarTotales();
       });
@@ -204,7 +195,6 @@ const Storefront = {
       });
     });
 
-    document.getElementById('storefront-cargo')?.addEventListener('input', () => this._actualizarTotales());
     document.getElementById('storefront-moneda')?.addEventListener('change', () => this._actualizarTotales());
     document.getElementById('btn-confirmar-pedido')?.addEventListener('click', () => this.confirmarPedido());
   },
@@ -238,9 +228,7 @@ const Storefront = {
     }
 
     const subtotal   = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-    const cargo      = this._tipoEntrega === 'domicilio'
-      ? Number(document.getElementById('storefront-cargo')?.value ?? 0) || 0
-      : 0;
+    // Los cargos (domicilio, transferencia) los asigna el vendedor al revisar el pedido.
     const metodoPago = document.getElementById('storefront-metodo-pago').value;
     const notas      = document.getElementById('storefront-notas').value.trim() || null;
 
@@ -250,15 +238,15 @@ const Storefront = {
 
     const ventaPayload = {
       tipo_entrega:        this._tipoEntrega,
-      cargo_domicilio:     cargo,
+      cargo_domicilio:     0,   // el vendedor lo asigna al gestionar el pedido
       metodo_pago:         metodoPago,
-      cargo_transferencia: 0,
+      cargo_transferencia: 0,   // ídem
       moneda_id:           monedaId,
       moneda_nombre:       opt?.dataset.nombre ?? null,
       moneda_simbolo:      opt?.dataset.simbolo ?? null,
       moneda_tasa:         parseFloat(opt?.dataset.tasa ?? 1),
       notas,
-      total:               subtotal + cargo,
+      total:               subtotal,
       estado:              'pendiente',
       cliente_id:          Auth.perfil.id,
       vendedor_id:         null,
@@ -294,7 +282,6 @@ const Storefront = {
 
     document.getElementById('storefront-metodo-pago').value = 'efectivo';
     document.getElementById('storefront-notas').value       = '';
-    document.getElementById('storefront-cargo').value       = '0';
     document.getElementById('storefront-fecha-entrega').value = '';
     if (document.getElementById('storefront-hora-entrega'))
       document.getElementById('storefront-hora-entrega').value = '';
