@@ -304,6 +304,19 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
 .input-luxury::placeholder { color: var(--placeholder); }
 .input-luxury:focus { border-color: rgba(212,166,85,0.4) !important; }
 
+/* Fix: input-group strips left/right radius so prefix/suffix sit flush */
+.input-group > .input-luxury:not(:first-child) {
+  border-radius: 0 8px 8px 0 !important;
+  border-left: 0 !important;
+}
+.input-group > .input-luxury:not(:last-child) {
+  border-radius: 8px 0 0 8px !important;
+  border-right: 0 !important;
+}
+.input-group > .input-luxury:first-child:last-child {
+  border-radius: 8px !important;
+}
+
 /* Date/time inputs — fix browser default styles */
 input[type="date"].input-luxury,
 input[type="time"].input-luxury {
@@ -381,6 +394,15 @@ input[type="time"].input-luxury {
 }
 .table-luxury tbody tr:last-child td { border-bottom: none; }
 .table-luxury tbody tr:hover td { background: rgba(181,113,42,0.04); }
+
+/* Compact icon-only action buttons inside tables */
+.table-luxury td .btn-sm.btn-luxury-outline,
+.table-luxury td .btn-sm.btn-luxury {
+  padding: 0.25rem 0.45rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
 
 /* ── CATÁLOGO / CARRITO ───────────────────────────── */
 .catalogo-grid {

@@ -42,8 +42,11 @@
         </div>
         <div class="mb-4">
           <label class="label-luxury mb-1">PIN de 4 dígitos</label>
-          <input type="password" id="login-pin" class="form-control input-luxury"
-                 maxlength="4" placeholder="• • • •" inputmode="numeric" autocomplete="current-password">
+          <div class="input-group">
+            <span class="input-group-text luxury-prefix"><i class="bi bi-lock"></i></span>
+            <input type="password" id="login-pin" class="form-control input-luxury"
+                   maxlength="4" placeholder="• • • •" inputmode="numeric" autocomplete="current-password">
+          </div>
         </div>
         <button id="btn-login" class="btn btn-luxury w-100">
           <span id="login-label">Ingresar</span>
