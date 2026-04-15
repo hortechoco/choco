@@ -176,6 +176,42 @@
     </div>
   </div>
 
+  <!-- Editar Pedido -->
+  <div class="modal fade" id="modal-editar-pedido" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content luxury-modal">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title font-lora" id="edit-pedido-titulo">Editar pedido</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body pt-3">
+          <input type="hidden" id="edit-pedido-id">
+          <div class="row g-2 mb-3">
+            <div class="col-7">
+              <label class="label-luxury mb-1">Fecha de entrega *</label>
+              <input type="date" id="edit-pedido-fecha" class="form-control input-luxury">
+            </div>
+            <div class="col-5">
+              <label class="label-luxury mb-1">Hora (opcional)</label>
+              <input type="time" id="edit-pedido-hora" class="form-control input-luxury">
+            </div>
+          </div>
+          <div id="edit-pedido-dir-row" class="mb-3">
+            <label class="label-luxury mb-1">Dirección de entrega</label>
+            <input type="text" id="edit-pedido-dir" class="form-control input-luxury" placeholder="Calle, número, referencia...">
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-luxury-outline" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" id="btn-guardar-edit-pedido" class="btn btn-luxury">
+            <span id="btn-guardar-edit-pedido-label">Guardar</span>
+            <span id="btn-guardar-edit-pedido-spinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="global-loader" class="global-loader d-none"><div class="loader-ring"></div></div>
   <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999"></div>
 
@@ -224,6 +260,8 @@
       });
 
       await Storefront.iniciar();
+
+      document.getElementById('btn-guardar-edit-pedido')?.addEventListener('click', () => MisPedidos._guardarEdicion());
 
       try {
         const pedidosPrevios = await fetchMisPedidos(Auth.perfil.id);

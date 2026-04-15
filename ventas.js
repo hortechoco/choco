@@ -30,6 +30,15 @@ const Ventas = {
     }
   },
 
+  _getCurrencyInfo() {
+    const sel = document.getElementById('moneda-pago');
+    const opt = sel?.selectedOptions[0];
+    return {
+      tasa:    parseFloat(opt?.dataset.tasa ?? 1),
+      simbolo: opt?.dataset.simbolo ?? '$',
+    };
+  },
+
   async _renderCatalogo(filtro = '') {
     const container = document.getElementById('catalogo-productos');
     const productos = Productos.lista;
@@ -43,14 +52,22 @@ const Ventas = {
       return;
     }
 
-    container.innerHTML = filtrados.map(p => `
+    const { tasa, simbolo } = this._getCurrencyInfo();
+
+    container.innerHTML = filtrados.map(p => {
+      const precioEquiv = tasa !== 1
+        ? `<div style="font-size:.65rem;color:var(--text-dim)">${simbolo}${(Number(p.precio) / tasa).toFixed(2)}</div>`
+        : '';
+      return `
       <div class="producto-card" data-id="${p.id}">
         ${p.imagen_url
           ? `<img src="${p.imagen_url}" alt="${p.nombre}">`
           : `<div class="pc-icon"><i class="bi bi-box-seam" style="font-size:1.2rem;color:var(--bronze)"></i></div>`}
         <div class="pc-nombre">${p.nombre}</div>
         <div class="pc-precio">$${Number(p.precio).toFixed(2)}</div>
-      </div>`).join('');
+        ${precioEquiv}
+      </div>`;
+    }).join('');
 
     container.querySelectorAll('.producto-card').forEach(card => {
       card.addEventListener('click', () => {
@@ -93,7 +110,13 @@ const Ventas = {
       return;
     }
 
-    container.innerHTML = this._carrito.map(item => `
+    container.innerHTML = this._carrito.map(item => {
+      const subtotalBase = item.precio * item.cantidad;
+      const { tasa, simbolo } = this._getCurrencyInfo();
+      const equivStr = tasa !== 1
+        ? `<span style="font-size:.65rem;color:var(--text-dim);display:block;text-align:right">${simbolo}${(subtotalBase / tasa).toFixed(2)}</span>`
+        : '';
+      return `
       <div class="carrito-item">
         <span class="ci-nombre">${item.nombre}</span>
         <div class="ci-controls">
@@ -101,9 +124,10 @@ const Ventas = {
           <span class="ci-qty">${item.cantidad}</span>
           <button class="ci-btn" data-action="inc" data-id="${item.productoId}">+</button>
         </div>
-        <span class="ci-subtotal">$${(item.precio * item.cantidad).toFixed(2)}</span>
+        <span class="ci-subtotal">$${subtotalBase.toFixed(2)}${equivStr}</span>
         <button class="ci-remove" data-action="remove" data-id="${item.productoId}"><i class="bi bi-x"></i></button>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
     container.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -322,7 +346,11 @@ const Ventas = {
     document.getElementById('cargo-transferencia-val')?.addEventListener('input', () => this._actualizarTotales());
 
     // Moneda
-    document.getElementById('moneda-pago')?.addEventListener('change', () => this._actualizarTotales());
+    document.getElementById('moneda-pago')?.addEventListener('change', () => {
+      this._renderCatalogo(document.getElementById('buscar-producto')?.value ?? '');
+      this._renderCarrito();
+      this._actualizarTotales();
+    });
 
     // Confirmar venta
     document.getElementById('btn-confirmar-venta')?.addEventListener('click', () => this.confirmar());

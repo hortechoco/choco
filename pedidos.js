@@ -5,6 +5,8 @@ const Pedidos = {
   _lista: [],
   _modal: null,
   _ventaActual: null,
+  _monedas: [],
+  _cargoTransfTipo: 'fijo',   // 'fijo' | 'porcentaje'
 
   async cargar() {
     const tbody = document.getElementById('pedidos-tbody');
@@ -14,6 +16,19 @@ const Pedidos = {
       this._renderTabla();
     } catch (err) {
       UI.mostrarToast('Error cargando pedidos: ' + err.message, 'error');
+    }
+  },
+
+  async _cargarMonedas() {
+    try {
+      this._monedas = await fetchMonedas(true);
+      const sel = document.getElementById('pedido-cargo-moneda');
+      if (!sel) return;
+      sel.innerHTML = this._monedas.map(m =>
+        `<option value="${m.id}" data-tasa="${m.tasa_cambio}" data-simbolo="${m.simbolo}" data-nombre="${m.nombre}">${m.nombre} (${m.simbolo})</option>`
+      ).join('');
+    } catch (err) {
+      console.warn('Error cargando monedas para cargos:', err.message);
     }
   },
 
@@ -54,7 +69,6 @@ const Pedidos = {
         </span>`;
       }
 
-      // Fecha entrega programada
       const fechaEntrega = v.fecha_entrega
         ? `<div style="font-size:.68rem;color:var(--bronze);margin-top:2px"><i class="bi bi-calendar-event me-1"></i>${new Date(v.fecha_entrega + 'T00:00:00').toLocaleDateString('es',{dateStyle:'short'})}${v.hora_entrega ? ' ' + v.hora_entrega : ''}</div>`
         : '';
@@ -86,6 +100,7 @@ const Pedidos = {
 
   async abrirModal(venta) {
     this._ventaActual = venta;
+    this._cargoTransfTipo = 'fijo';
     const cliente = venta.perfiles;
 
     document.getElementById('pedido-id-label').textContent      = `#${venta.id}`;
@@ -98,7 +113,6 @@ const Pedidos = {
     document.getElementById('pedido-pago-label').innerHTML      = `<span class="badge-pago">${venta.metodo_pago}</span>`;
     document.getElementById('pedido-notas-label').textContent   = venta.notas || '—';
 
-    // Fecha/hora de entrega programada
     const fechaEntEl = document.getElementById('pedido-fecha-entrega-row');
     const fechaEntLbl = document.getElementById('pedido-fecha-entrega-label');
     if (fechaEntEl && fechaEntLbl) {
@@ -112,7 +126,6 @@ const Pedidos = {
       }
     }
 
-    // Dirección de entrega
     const dirEntEl  = document.getElementById('pedido-dir-entrega-row');
     const dirEntLbl = document.getElementById('pedido-dir-entrega-label');
     if (dirEntEl && dirEntLbl) {
@@ -124,7 +137,6 @@ const Pedidos = {
       }
     }
 
-    // ── Estado aprobación ───────────────────────────
     const aprobEl = document.getElementById('pedido-aprobacion-row');
     if (aprobEl) {
       if (!venta.cliente_id) {
@@ -144,7 +156,6 @@ const Pedidos = {
       }
     }
 
-    // ── Confirmaciones ──────────────────────────────
     const confirmaEl = document.getElementById('pedido-confirmacion-row');
     if (confirmaEl) {
       if (!venta.cliente_id) {
@@ -162,7 +173,6 @@ const Pedidos = {
       }
     }
 
-    // Campos editables
     document.getElementById('pedido-estado').value              = venta.estado;
     document.getElementById('pedido-cargo-domicilio').value     = venta.cargo_domicilio ?? 0;
     document.getElementById('pedido-cargo-transferencia').value = venta.cargo_transferencia ?? 0;
@@ -170,15 +180,30 @@ const Pedidos = {
     document.getElementById('pedido-domicilio-row').classList.toggle('d-none', venta.tipo_entrega !== 'domicilio');
     document.getElementById('pedido-transf-row').classList.toggle('d-none', venta.metodo_pago !== 'transferencia');
 
-    // Botón confirmar entrega — mostrar solo si no completado/cancelado
+    // Reset cargo tipo buttons
+    document.querySelectorAll('.btn-cargo-tipo-pedido').forEach(b =>
+      b.classList.toggle('active', b.dataset.cargoTipo === 'fijo'));
+    this._sincronizarPrefixCargo();
+
+    // Set cargo moneda (restore if previously set, else default to base)
+    const cargoMonedaSel = document.getElementById('pedido-cargo-moneda');
+    if (cargoMonedaSel) {
+      if (venta.cargo_moneda_id) {
+        cargoMonedaSel.value = String(venta.cargo_moneda_id);
+      } else {
+        // Default to base currency (tasa === 1)
+        const baseOpt = Array.from(cargoMonedaSel.options).find(o => parseFloat(o.dataset.tasa) === 1);
+        if (baseOpt) cargoMonedaSel.value = baseOpt.value;
+        else cargoMonedaSel.selectedIndex = 0;
+      }
+    }
+
     const btnConfEnt = document.getElementById('btn-confirmar-entrega-pedido');
     if (btnConfEnt) {
       const yaConfirmado = venta.vendedor_confirmo_entrega;
       const terminado    = venta.estado === 'cancelado';
       btnConfEnt.disabled = yaConfirmado || terminado;
       const labelEnt = venta.tipo_entrega === 'domicilio' ? 'Confirmar entrega' : 'Confirmar recogida';
-      btnConfEnt.querySelector('span')?.setAttribute('data-label', labelEnt);
-      btnConfEnt.childNodes.forEach(n => { if (n.nodeType === 3) n.textContent = ''; });
       btnConfEnt.innerHTML = yaConfirmado
         ? `<i class="bi bi-check2-all me-1"></i>${labelEnt} ✓`
         : `<i class="bi bi-check2-all me-1"></i>${labelEnt}`;
@@ -216,21 +241,45 @@ const Pedidos = {
     if (!venta) return;
     const items    = venta._items ?? [];
     const subtotal = items.reduce((s, i) => s + Number(i.subtotal), 0);
-    const cargo    = venta.tipo_entrega === 'domicilio'
-      ? Number(document.getElementById('pedido-cargo-domicilio')?.value) || 0 : 0;
-    const transf   = venta.metodo_pago === 'transferencia'
-      ? Number(document.getElementById('pedido-cargo-transferencia')?.value) || 0 : 0;
-    const total = subtotal + cargo + transf;
 
-    document.getElementById('pedido-subtotal').textContent   = `$${subtotal.toFixed(2)}`;
-    document.getElementById('pedido-total-val').textContent  = `$${total.toFixed(2)}`;
+    // Cargo moneda
+    const cargoMonedaSel = document.getElementById('pedido-cargo-moneda');
+    const cargoOpt  = cargoMonedaSel?.selectedOptions[0];
+    const cargoTasa = parseFloat(cargoOpt?.dataset.tasa ?? 1);
+    const cargoSimb = cargoOpt?.dataset.simbolo ?? '$';
+
+    // Cargo domicilio in cargo_moneda units
+    const cargoRaw = venta.tipo_entrega === 'domicilio'
+      ? Number(document.getElementById('pedido-cargo-domicilio')?.value) || 0 : 0;
+
+    // Cargo transferencia — fijo or % of subtotal (base), expressed in cargo_moneda units
+    let cargoTransfRaw = 0;
+    if (venta.metodo_pago === 'transferencia') {
+      const val = Number(document.getElementById('pedido-cargo-transferencia')?.value) || 0;
+      cargoTransfRaw = this._cargoTransfTipo === 'porcentaje'
+        ? (subtotal * val / 100) / cargoTasa
+        : val;
+    }
+
+    // Convert to base for total
+    const total = subtotal + cargoRaw * cargoTasa + cargoTransfRaw * cargoTasa;
+
+    document.getElementById('pedido-subtotal').textContent  = `$${subtotal.toFixed(2)}`;
+    document.getElementById('pedido-total-val').textContent = `$${total.toFixed(2)}`;
 
     const cargoRow = document.getElementById('pedido-cargo-row-display');
-    if (cargoRow) cargoRow.style.setProperty('display', cargo > 0 ? 'flex' : 'none', 'important');
+    if (cargoRow) cargoRow.style.setProperty('display', cargoRaw > 0 ? 'flex' : 'none', 'important');
     const transfRow = document.getElementById('pedido-transf-row-display');
-    if (transfRow) transfRow.style.setProperty('display', transf > 0 ? 'flex' : 'none', 'important');
-    document.getElementById('pedido-cargo-display').textContent  = `$${cargo.toFixed(2)}`;
-    document.getElementById('pedido-transf-display').textContent = `$${transf.toFixed(2)}`;
+    if (transfRow) transfRow.style.setProperty('display', cargoTransfRaw > 0 ? 'flex' : 'none', 'important');
+
+    document.getElementById('pedido-cargo-display').textContent  = `${cargoSimb}${cargoRaw.toFixed(2)}`;
+    document.getElementById('pedido-transf-display').textContent = `${cargoSimb}${cargoTransfRaw.toFixed(2)}`;
+  },
+
+  _sincronizarPrefixCargo() {
+    const prefix = document.getElementById('pedido-cargo-transf-prefix');
+    if (!prefix) return;
+    prefix.textContent = this._cargoTransfTipo === 'porcentaje' ? '%' : '$';
   },
 
   async guardar() {
@@ -238,13 +287,31 @@ const Pedidos = {
     if (!venta) return;
 
     const estado = document.getElementById('pedido-estado').value;
-    const cargo_domicilio = venta.tipo_entrega === 'domicilio'
-      ? Number(document.getElementById('pedido-cargo-domicilio').value) || 0 : 0;
-    const cargo_transferencia = venta.metodo_pago === 'transferencia'
-      ? Number(document.getElementById('pedido-cargo-transferencia').value) || 0 : 0;
+
+    const cargoMonedaSel    = document.getElementById('pedido-cargo-moneda');
+    const cargoOpt          = cargoMonedaSel?.selectedOptions[0];
+    const cargoTasa         = parseFloat(cargoOpt?.dataset.tasa ?? 1);
+    const cargo_moneda_id      = cargoMonedaSel?.value ? Number(cargoMonedaSel.value) : null;
+    const cargo_moneda_nombre  = cargoOpt?.dataset.nombre ?? null;
+    const cargo_moneda_simbolo = cargoOpt?.dataset.simbolo ?? null;
+    const cargo_moneda_tasa    = cargoTasa;
+
     const items    = venta._items ?? [];
     const subtotal = items.reduce((s, i) => s + Number(i.subtotal), 0);
-    const total    = subtotal + cargo_domicilio + cargo_transferencia;
+
+    const cargo_domicilio = venta.tipo_entrega === 'domicilio'
+      ? Number(document.getElementById('pedido-cargo-domicilio').value) || 0 : 0;
+
+    let cargo_transferencia = 0;
+    if (venta.metodo_pago === 'transferencia') {
+      const val = Number(document.getElementById('pedido-cargo-transferencia')?.value) || 0;
+      cargo_transferencia = this._cargoTransfTipo === 'porcentaje'
+        ? (subtotal * val / 100) / cargoTasa
+        : val;
+    }
+
+    // Total in base currency
+    const total = subtotal + cargo_domicilio * cargoTasa + cargo_transferencia * cargoTasa;
 
     const tieneNuevosCargos = cargo_domicilio > 0 || cargo_transferencia > 0;
     const yaAprobado = venta.aprobacion_cliente === 'aprobado';
@@ -254,6 +321,10 @@ const Pedidos = {
       estado,
       cargo_domicilio,
       cargo_transferencia,
+      cargo_moneda_id,
+      cargo_moneda_nombre,
+      cargo_moneda_simbolo,
+      cargo_moneda_tasa,
       total,
       vendedor_id: Auth.perfil?.id ?? null,
       ...(necesitaAprobacion ? { aprobacion_cliente: 'pendiente' } : {}),
@@ -279,7 +350,7 @@ const Pedidos = {
       UI.mostrarToast('Error: ' + err.message, 'error');
     } finally {
       spinner.classList.add('d-none');
-      label.textContent = 'Guardar';
+      label.textContent = 'Guardar cambios';
     }
   },
 
@@ -315,9 +386,22 @@ const Pedidos = {
   },
 
   iniciarEscuchas() {
+    this._cargarMonedas();
+
     document.getElementById('pedido-cargo-domicilio')?.addEventListener('input', () => this._actualizarTotalModal());
     document.getElementById('pedido-cargo-transferencia')?.addEventListener('input', () => this._actualizarTotalModal());
+    document.getElementById('pedido-cargo-moneda')?.addEventListener('change', () => this._actualizarTotalModal());
     document.getElementById('btn-guardar-pedido')?.addEventListener('click', () => this.guardar());
     document.getElementById('btn-confirmar-entrega-pedido')?.addEventListener('click', () => this.confirmarEntregaVendedor());
+
+    document.querySelectorAll('.btn-cargo-tipo-pedido').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.btn-cargo-tipo-pedido').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this._cargoTransfTipo = btn.dataset.cargoTipo;
+        this._sincronizarPrefixCargo();
+        this._actualizarTotalModal();
+      });
+    });
   },
 };

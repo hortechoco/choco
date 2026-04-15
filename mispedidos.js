@@ -3,6 +3,7 @@
 
 const MisPedidos = {
   _lista: [],
+  _modalEditar: null,
 
   async cargar() {
     const container = document.getElementById('mispedidos-lista');
@@ -39,6 +40,7 @@ const MisPedidos = {
         if (accion === 'cancelar')  this._cancelar(pedido);
         if (accion === 'aprobar')   this._aprobar(pedido);
         if (accion === 'confirmar') this._confirmarEntrega(pedido);
+        if (accion === 'editar')    this._editar(pedido);
       });
     });
   },
@@ -51,7 +53,6 @@ const MisPedidos = {
     const fecha    = new Date(v.fecha).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' });
     const acciones = this._acciones(v);
 
-    // Fecha/hora de entrega programada
     let entregaInfo = '';
     if (v.fecha_entrega) {
       const fechaEnt = new Date(v.fecha_entrega + 'T00:00:00').toLocaleDateString('es', { dateStyle: 'medium' });
@@ -62,7 +63,6 @@ const MisPedidos = {
         </div>`;
     }
 
-    // Dirección de entrega
     let dirInfo = '';
     if (v.tipo_entrega === 'domicilio' && v.direccion_entrega) {
       dirInfo = `
@@ -71,14 +71,18 @@ const MisPedidos = {
         </div>`;
     }
 
+    // Cargo currency symbol (from vendor)
+    const cargoSimb = v.cargo_moneda_simbolo ?? '$';
+
     // Banner de aprobación
     let banner = '';
     if (v.aprobacion_cliente === 'pendiente') {
       const cargos = Number(v.cargo_domicilio || 0) + Number(v.cargo_transferencia || 0);
+      const cargoNombre = v.cargo_moneda_nombre ? ` (${v.cargo_moneda_nombre})` : '';
       banner = `
         <div class="aprobacion-banner">
           <i class="bi bi-exclamation-circle me-2"></i>
-          El vendedor añadió cargos adicionales de <strong>$${cargos.toFixed(2)}</strong>.
+          El vendedor añadió cargos adicionales de <strong>${cargoSimb}${cargos.toFixed(2)}${cargoNombre}</strong>.
           Total actualizado: <strong>$${Number(v.total).toFixed(2)}</strong>
         </div>`;
     }
@@ -94,7 +98,7 @@ const MisPedidos = {
       extraBadges += `<span class="badge-confirmado" style="opacity:.7"><i class="bi bi-check2 me-1"></i>Entregado por vendedor</span>`;
     }
 
-    // Desglose de cargos
+    // Desglose de cargos con moneda del vendedor
     let desglose = '';
     const subtotal = items.reduce((s, i) => s + Number(i.subtotal), 0);
     const cargoD   = Number(v.cargo_domicilio || 0);
@@ -103,8 +107,8 @@ const MisPedidos = {
       desglose = `
         <div class="pedido-desglose mt-2">
           <span>Subtotal: $${subtotal.toFixed(2)}</span>
-          ${cargoD > 0 ? `<span>Domicilio: $${cargoD.toFixed(2)}</span>` : ''}
-          ${cargoT > 0 ? `<span>Transferencia: $${cargoT.toFixed(2)}</span>` : ''}
+          ${cargoD > 0 ? `<span>Domicilio: ${cargoSimb}${cargoD.toFixed(2)}</span>` : ''}
+          ${cargoT > 0 ? `<span>Transferencia: ${cargoSimb}${cargoT.toFixed(2)}</span>` : ''}
         </div>`;
     }
 
@@ -151,10 +155,9 @@ const MisPedidos = {
       acc.push({ accion: 'aprobar', label: 'Aprobar cargos', icono: 'bi-check-circle', clase: 'btn-luxury' });
     }
 
-    // Confirmar llegada/recepción
-    // Para domicilio: mostrar desde pendiente/en_proceso (la entrega puede llegar antes de que el vendedor marque completado)
-    // Para recogida: solo cuando completado
-    const puedeConfirmar = !v.cliente_confirmo_entrega && (
+    // Confirmar llegada/recepción — bloqueado mientras haya aprobación pendiente
+    const aprobPendiente = v.aprobacion_cliente === 'pendiente';
+    const puedeConfirmar = !v.cliente_confirmo_entrega && !aprobPendiente && (
       v.estado === 'completado' ||
       (v.tipo_entrega === 'domicilio' && (v.estado === 'en_proceso' || v.estado === 'pendiente'))
     );
@@ -168,7 +171,14 @@ const MisPedidos = {
       });
     }
 
-    // Cancelar (solo si pendiente, o en_proceso y aún no aprobó los cargos)
+    // Editar fecha/hora/dirección
+    const puedeEditar = (v.estado === 'pendiente' || v.estado === 'en_proceso')
+      && !v.cliente_confirmo_entrega;
+    if (puedeEditar) {
+      acc.push({ accion: 'editar', label: 'Editar entrega', icono: 'bi-pencil', clase: 'btn-luxury-outline' });
+    }
+
+    // Cancelar
     const puedeCanc = v.estado === 'pendiente' ||
       (v.estado === 'en_proceso' && v.aprobacion_cliente !== 'aprobado');
     if (puedeCanc) {
@@ -197,9 +207,11 @@ const MisPedidos = {
   },
 
   async _aprobar(pedido) {
+    const cargoSimb = pedido.cargo_moneda_simbolo ?? '$';
+    const cargoNombre = pedido.cargo_moneda_nombre ? ` ${pedido.cargo_moneda_nombre}` : '';
     const cargos = Number(pedido.cargo_domicilio || 0) + Number(pedido.cargo_transferencia || 0);
     const ok = window.confirm(
-      `¿Aprobar los cargos adicionales ($${cargos.toFixed(2)})?\nTotal final confirmado: $${Number(pedido.total).toFixed(2)}`
+      `¿Aprobar los cargos adicionales (${cargoSimb}${cargos.toFixed(2)}${cargoNombre})?\nTotal final: $${Number(pedido.total).toFixed(2)}`
     );
     if (!ok) return;
     UI.toggleLoader(true);
@@ -236,7 +248,55 @@ const MisPedidos = {
     }
   },
 
-  // Devuelve cuántos pedidos requieren acción del cliente (para badge en nav)
+  _editar(pedido) {
+    document.getElementById('edit-pedido-id').value         = pedido.id;
+    document.getElementById('edit-pedido-fecha').value      = pedido.fecha_entrega ?? '';
+    document.getElementById('edit-pedido-hora').value       = pedido.hora_entrega ?? '';
+    document.getElementById('edit-pedido-dir').value        = pedido.direccion_entrega ?? '';
+
+    const hoy = new Date().toISOString().split('T')[0];
+    const fechaInput = document.getElementById('edit-pedido-fecha');
+    if (fechaInput) fechaInput.min = hoy;
+
+    const dirRow = document.getElementById('edit-pedido-dir-row');
+    if (dirRow) dirRow.classList.toggle('d-none', pedido.tipo_entrega !== 'domicilio');
+
+    const titulo = document.getElementById('edit-pedido-titulo');
+    if (titulo) titulo.textContent = `Editar pedido #${pedido.id}`;
+
+    if (!this._modalEditar)
+      this._modalEditar = new bootstrap.Modal(document.getElementById('modal-editar-pedido'));
+    this._modalEditar.show();
+  },
+
+  async _guardarEdicion() {
+    const id              = document.getElementById('edit-pedido-id').value;
+    const fecha_entrega   = document.getElementById('edit-pedido-fecha').value  || null;
+    const hora_entrega    = document.getElementById('edit-pedido-hora').value   || null;
+    const direccion_entrega = document.getElementById('edit-pedido-dir').value.trim() || null;
+
+    if (!fecha_entrega) return UI.mostrarToast('La fecha de entrega es obligatoria', 'error');
+
+    const spinner = document.getElementById('btn-guardar-edit-pedido-spinner');
+    const label   = document.getElementById('btn-guardar-edit-pedido-label');
+    if (spinner) spinner.classList.remove('d-none');
+    if (label)   label.textContent = 'Guardando...';
+
+    UI.toggleLoader(true);
+    try {
+      await updateVentaCliente(Number(id), { fecha_entrega, hora_entrega, direccion_entrega });
+      UI.mostrarToast('Pedido actualizado', 'success');
+      this._modalEditar?.hide();
+      await this.cargar();
+    } catch (err) {
+      UI.mostrarToast('Error: ' + err.message, 'error');
+    } finally {
+      UI.toggleLoader(false);
+      if (spinner) spinner.classList.add('d-none');
+      if (label)   label.textContent = 'Guardar';
+    }
+  },
+
   contarAccionesPendientes(lista = this._lista) {
     return lista.filter(v =>
       v.aprobacion_cliente === 'pendiente' ||

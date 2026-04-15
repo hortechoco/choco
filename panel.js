@@ -5,11 +5,12 @@ async function _cargarDashboard() {
   try {
     const [ventasHoy, todosProductos] = await Promise.all([fetchVentasHoy(), fetchProductos()]);
 
-    const totalHoy   = ventasHoy.reduce((s, v) => s + Number(v.total), 0);
+    const completadas = ventasHoy.filter(v => v.estado === 'completado');
+    const totalHoy   = completadas.reduce((s, v) => s + Number(v.total), 0);
     const domicilios = ventasHoy.filter(v => v.tipo_entrega === 'domicilio').length;
     const pendientes = ventasHoy.filter(v => v.estado === 'pendiente').length;
 
-    document.getElementById('stat-ventas-hoy').textContent  = ventasHoy.length;
+    document.getElementById('stat-ventas-hoy').textContent  = completadas.length;
     document.getElementById('stat-total-hoy').textContent   = `$${totalHoy.toFixed(2)}`;
     document.getElementById('stat-productos').textContent   = todosProductos.length;
     document.getElementById('stat-domicilios').textContent  = domicilios;

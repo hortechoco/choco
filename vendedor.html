@@ -427,6 +427,14 @@
 
           <hr style="border-color:var(--border);margin:1rem 0">
 
+          <!-- Moneda de cargos -->
+          <div class="mb-3">
+            <label class="label-luxury mb-1">Moneda de cargos</label>
+            <select id="pedido-cargo-moneda" class="form-select input-luxury">
+              <option>Cargando...</option>
+            </select>
+          </div>
+
           <!-- Campos editables -->
           <div class="row g-3">
             <div class="col-md-4">
@@ -439,12 +447,19 @@
               </select>
             </div>
             <div class="col-md-4 d-none" id="pedido-domicilio-row">
-              <label class="label-luxury mb-1">Cargo domicilio ($)</label>
+              <label class="label-luxury mb-1">Cargo domicilio</label>
               <input type="number" id="pedido-cargo-domicilio" class="form-control input-luxury" min="0" step="0.01" value="0">
             </div>
-            <div class="col-md-4 d-none" id="pedido-transf-row">
-              <label class="label-luxury mb-1">Cargo transferencia ($)</label>
-              <input type="number" id="pedido-cargo-transferencia" class="form-control input-luxury" min="0" step="0.01" value="0">
+            <div class="col-md-8 d-none" id="pedido-transf-row">
+              <label class="label-luxury mb-1">Cargo por transferencia</label>
+              <div class="d-flex gap-1 mb-2">
+                <button type="button" class="btn-cargo-tipo-pedido active" data-cargo-tipo="fijo">$ Fijo</button>
+                <button type="button" class="btn-cargo-tipo-pedido" data-cargo-tipo="porcentaje">% Porcentaje</button>
+              </div>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text luxury-prefix" id="pedido-cargo-transf-prefix">$</span>
+                <input type="number" id="pedido-cargo-transferencia" class="form-control input-luxury" min="0" step="0.01" value="0">
+              </div>
             </div>
           </div>
 
