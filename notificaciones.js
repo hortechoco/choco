@@ -21,7 +21,7 @@ async function enviarNtfy(titulo, mensaje, prioridad = 'default') {
 async function notificarNuevaVenta(venta, items, perfil = null) {
   const resumen = items.map(i => `${i.cantidad}x ${i.nombre}`).join(', ');
   const tipo    = venta.tipo_entrega === 'domicilio' ? 'Domicilio' : 'Recogida';
-  const titulo  = `Nueva venta ${Number(venta.total).toFixed(2)}`;
+  const titulo  = `Nueva venta $${Number(venta.total).toFixed(2)}`;
 
   const lineas = [
     `Tipo: ${tipo} | Pago: ${venta.metodo_pago}`,
@@ -39,9 +39,8 @@ async function notificarNuevaVenta(venta, items, perfil = null) {
     lineas.push(`Cliente: ${perfil.nombre_completo ?? '—'}`);
     lineas.push(`CI: ${perfil.carnet ?? '—'} | Tel: ${perfil.telefono ?? '—'}`);
     if (venta.tipo_entrega === 'domicilio') {
-      // Usar la dirección específica del pedido si fue ingresada, si no la del perfil
       const dir = venta.direccion_entrega || perfil.direccion;
-      if (dir) lineas.push(`Dirección: ${dir}`);
+      if (dir) lineas.push(`Direccion: ${dir}`);
     }
   }
 
@@ -54,16 +53,19 @@ async function notificarNuevaVenta(venta, items, perfil = null) {
 async function notificarCambioPedidoCliente(venta, tipo, perfil = null) {
   const cfg = {
     cancelado_cliente: {
-      titulo: `Pedido ${venta.id} cancelado por cliente`,
-      prioridad: 'high', tags: 'x,chocolate',
+      titulo: `Pedido #${venta.id} cancelado por cliente`,
+      prioridad: 'high',
+      tags: 'x,chocolate',
     },
     aprobado_cliente: {
-      titulo: `Pedido ${venta.id} — cargos aprobados`,
-      prioridad: 'default', tags: 'white_check_mark,chocolate',
+      titulo: `Pedido #${venta.id} - cargos aprobados`,
+      prioridad: 'default',
+      tags: 'white_check_mark,chocolate',
     },
     confirmado_entrega: {
-      titulo: `Pedido ${venta.id} — entrega confirmada por cliente`,
-      prioridad: 'low', tags: 'package,chocolate',
+      titulo: `Pedido #${venta.id} - entrega confirmada por cliente`,
+      prioridad: 'low',
+      tags: 'package,chocolate',
     },
   };
   const c = cfg[tipo];
@@ -113,12 +115,12 @@ async function notificarModificacionPedido(ventaAntes, ventaDespues, vendedorPer
   const lineas = [
     ...cambios,
     `Total actual: $${Number(ventaDespues.total).toFixed(2)}`,
-    ...(ventaDespues.aprobacion_cliente === 'pendiente' ? ['⚠ Requiere aprobación del cliente'] : []),
+    ...(ventaDespues.aprobacion_cliente === 'pendiente' ? ['* Requiere aprobacion del cliente'] : []),
     ...(vendedorPerfil ? [`Vendedor: ${vendedorPerfil.nombre_completo}`] : []),
   ];
 
   await enviarNtfy(
-    `[Horte] 📝 Pedido #${ventaAntes.id} modificado`,
+    `[Horte] Pedido #${ventaAntes.id} modificado`,
     lineas.join('\n'),
     'default'
   );
