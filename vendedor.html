@@ -327,14 +327,14 @@
   <script>
     (async function () {
       const ok = await Auth.iniciar();
-      if (!ok || Auth.esCliente) { window.location.href = 'login.html'; return; }
+      if (!ok || Auth.esCliente) { window.location.href = 'index.html'; return; }
       if (Auth.esAdmin)          { window.location.href = 'admin.html'; return; }
 
       const badge = document.getElementById('nav-user-badge');
       if (badge) badge.textContent = `${Auth.perfil?.nombre_completo ?? 'Vendedor'} · vendedor`;
 
       document.getElementById('btn-logout').addEventListener('click', () => {
-        Auth.signOut(); window.location.href = 'login.html';
+        Auth.signOut(); window.location.href = 'index.html';
       });
 
       document.querySelectorAll('.nav-pill[data-module]').forEach(item => {
