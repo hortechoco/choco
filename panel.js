@@ -53,7 +53,8 @@ async function _cargarDashboard() {
 
 function _navegarA(modulo) {
   document.querySelectorAll('.view-section').forEach(v => v.classList.add('d-none'));
-  document.querySelectorAll('.sidebar-nav .nav-item').forEach(i => {
+  // Soporte para nav-pill (navbar) y nav-item (sidebar legacy)
+  document.querySelectorAll('.nav-pill[data-module], .sidebar-nav .nav-item[data-module]').forEach(i => {
     i.classList.toggle('active', i.dataset.module === modulo);
   });
 
@@ -61,8 +62,10 @@ function _navegarA(modulo) {
     dashboard: 'Dashboard', ventas: 'Nueva Venta',
     historial: 'Historial', productos: 'Productos',
     clientes: 'Clientes',  usuarios: 'Usuarios',
+    monedas: 'Monedas',
   };
-  document.getElementById('nav-current-module').textContent = nombres[modulo] ?? modulo;
+  const moduleEl = document.getElementById('nav-current-module');
+  if (moduleEl) moduleEl.textContent = nombres[modulo] ?? modulo;
 
   const seccion = document.getElementById(`view-${modulo}`);
   if (seccion) seccion.classList.remove('d-none');
@@ -75,4 +78,5 @@ function _navegarA(modulo) {
   if (modulo === 'clientes')                             Clientes.cargar();
   if (modulo === 'productos' && typeof Productos !== 'undefined') Productos.cargar();
   if (modulo === 'usuarios'  && typeof Usuarios  !== 'undefined') Usuarios.cargar();
+  if (modulo === 'monedas'   && typeof Monedas   !== 'undefined') Monedas.cargar();
 }

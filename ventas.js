@@ -2,12 +2,28 @@
 // Depende de: supabase.js, notificaciones.js, ui.js
 
 const Ventas = {
-  _carrito: [],       // [{ productoId, nombre, precio, cantidad }]
+  _carrito: [],
   _tipo: 'recogida',
+  _cargoTransfTipo: 'fijo',   // 'fijo' | 'porcentaje'
+  _monedas: [],
 
   async iniciar() {
+    await this._cargarMonedas();
     await this._renderCatalogo();
     this._bindEventos();
+  },
+
+  async _cargarMonedas() {
+    try {
+      this._monedas = await fetchMonedas(true);
+      const sel = document.getElementById('moneda-pago');
+      if (!sel) return;
+      sel.innerHTML = this._monedas.map(m =>
+        `<option value="${m.id}" data-tasa="${m.tasa_cambio}" data-simbolo="${m.simbolo}" data-nombre="${m.nombre}">${m.nombre} (${m.simbolo})</option>`
+      ).join('');
+    } catch (err) {
+      console.warn('Error cargando monedas:', err.message);
+    }
   },
 
   async _renderCatalogo(filtro = '') {
@@ -100,17 +116,50 @@ const Ventas = {
 
   _actualizarTotales() {
     const subtotal = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-    const cargo    = this._tipo === 'domicilio'
+
+    // Cargo domicilio
+    const cargo = this._tipo === 'domicilio'
       ? Number(document.getElementById('cargo-domicilio')?.value ?? 0) || 0
       : 0;
-    const total = subtotal + cargo;
 
-    document.getElementById('carrito-subtotal').textContent  = `$${subtotal.toFixed(2)}`;
-    document.getElementById('carrito-cargo').textContent     = `$${cargo.toFixed(2)}`;
-    document.getElementById('carrito-total-val').textContent = `$${total.toFixed(2)}`;
+    // Cargo transferencia
+    const metodoPago = document.getElementById('metodo-pago')?.value;
+    let cargoTransf = 0;
+    if (metodoPago === 'transferencia') {
+      const val = Number(document.getElementById('cargo-transferencia-val')?.value) || 0;
+      cargoTransf = this._cargoTransfTipo === 'porcentaje'
+        ? (subtotal * val / 100)
+        : val;
+    }
+
+    const total = subtotal + cargo + cargoTransf;
+
+    document.getElementById('carrito-subtotal').textContent       = `$${subtotal.toFixed(2)}`;
+    document.getElementById('carrito-cargo').textContent          = `$${cargo.toFixed(2)}`;
+    document.getElementById('carrito-cargo-transf').textContent   = `$${cargoTransf.toFixed(2)}`;
+    document.getElementById('carrito-total-val').textContent      = `$${total.toFixed(2)}`;
 
     const cargoRow = document.getElementById('cargo-row');
     if (cargoRow) cargoRow.style.setProperty('display', this._tipo === 'domicilio' ? 'flex' : 'none', 'important');
+
+    const transfRow = document.getElementById('cargo-transf-row');
+    if (transfRow) transfRow.style.setProperty('display', (metodoPago === 'transferencia' && cargoTransf > 0) ? 'flex' : 'none', 'important');
+
+    // Equivalente en moneda seleccionada
+    const monedaSel = document.getElementById('moneda-pago');
+    const opt = monedaSel?.selectedOptions[0];
+    const tasa = parseFloat(opt?.dataset.tasa ?? 1);
+    const simbolo = opt?.dataset.simbolo ?? '$';
+    const nombreM = opt?.dataset.nombre ?? '';
+    const equivEl = document.getElementById('moneda-equivalente');
+    if (equivEl) {
+      if (tasa && tasa !== 1) {
+        equivEl.textContent = `≈ ${simbolo}${(total / tasa).toFixed(2)} ${nombreM}`;
+        equivEl.classList.remove('d-none');
+      } else {
+        equivEl.classList.add('d-none');
+      }
+    }
   },
 
   async confirmar() {
@@ -121,15 +170,38 @@ const Ventas = {
       ? Number(document.getElementById('cargo-domicilio')?.value ?? 0) || 0
       : 0;
     const clienteId = document.getElementById('venta-cliente-id')?.value || null;
+    const metodoPago = document.getElementById('metodo-pago').value;
+
+    // Cargo transferencia
+    let cargoTransf = 0;
+    if (metodoPago === 'transferencia') {
+      const val = Number(document.getElementById('cargo-transferencia-val')?.value) || 0;
+      cargoTransf = this._cargoTransfTipo === 'porcentaje'
+        ? (subtotal * val / 100)
+        : val;
+    }
+
+    // Moneda
+    const monedaSel = document.getElementById('moneda-pago');
+    const opt = monedaSel?.selectedOptions[0];
+    const monedaId     = monedaSel?.value ? Number(monedaSel.value) : null;
+    const monedaNombre = opt?.dataset.nombre ?? null;
+    const monedaSimbolo = opt?.dataset.simbolo ?? null;
+    const monedaTasa   = parseFloat(opt?.dataset.tasa ?? 1);
 
     const ventaPayload = {
-      tipo_entrega:    this._tipo,
-      cargo_domicilio: cargo,
-      metodo_pago:     document.getElementById('metodo-pago').value,
-      notas:           document.getElementById('venta-notas').value.trim() || null,
-      total:           subtotal + cargo,
-      fecha:           new Date().toISOString(),
-      cliente_id:      clienteId ? Number(clienteId) : null,
+      tipo_entrega:        this._tipo,
+      cargo_domicilio:     cargo,
+      metodo_pago:         metodoPago,
+      cargo_transferencia: cargoTransf,
+      moneda_id:           monedaId,
+      moneda_nombre:       monedaNombre,
+      moneda_simbolo:      monedaSimbolo,
+      moneda_tasa:         monedaTasa,
+      notas:               document.getElementById('venta-notas').value.trim() || null,
+      total:               subtotal + cargo + cargoTransf,
+      fecha:               new Date().toISOString(),
+      cliente_id:          clienteId ? Number(clienteId) : null,
     };
 
     const detalles = this._carrito.map(i => ({
@@ -155,13 +227,20 @@ const Ventas = {
   _resetear() {
     this._carrito = [];
     this._tipo = 'recogida';
+    this._cargoTransfTipo = 'fijo';
     document.getElementById('metodo-pago').value      = 'efectivo';
     document.getElementById('venta-notas').value      = '';
     document.getElementById('cargo-domicilio').value  = '0';
-    document.querySelectorAll('.btn-entrega').forEach(b => b.classList.toggle('active', b.dataset.tipo === 'recogida'));
+    document.querySelectorAll('#view-ventas .btn-entrega[data-tipo]').forEach(b =>
+      b.classList.toggle('active', b.dataset.tipo === 'recogida'));
     document.getElementById('cargo-domicilio-row').classList.add('d-none');
+    document.getElementById('transferencia-cargo-box').classList.add('d-none');
+    document.getElementById('cargo-transferencia-val').value = '0';
+    // Reset cargo tipo buttons
+    document.querySelectorAll('.btn-cargo-tipo').forEach(b =>
+      b.classList.toggle('active', b.dataset.cargoTipo === 'fijo'));
+    this._sincronizarPrefixCargo();
 
-    // Limpiar selector de cliente
     const hiddenId     = document.getElementById('venta-cliente-id');
     const inputCliente = document.getElementById('venta-cliente-buscar');
     const btnLimpiar   = document.getElementById('btn-limpiar-cliente');
@@ -174,16 +253,21 @@ const Ventas = {
     this._renderCarrito();
   },
 
+  _sincronizarPrefixCargo() {
+    const prefix = document.getElementById('cargo-transf-prefix');
+    if (!prefix) return;
+    prefix.textContent = this._cargoTransfTipo === 'porcentaje' ? '%' : '$';
+  },
+
   _bindEventos() {
-    // Búsqueda de producto
     document.getElementById('buscar-producto')?.addEventListener('input', e => {
       this._renderCatalogo(e.target.value);
     });
 
     // Tipo entrega
-    document.querySelectorAll('.btn-entrega').forEach(btn => {
+    document.querySelectorAll('#view-ventas .btn-entrega[data-tipo]').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.btn-entrega').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#view-ventas .btn-entrega[data-tipo]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         this._tipo = btn.dataset.tipo;
         document.getElementById('cargo-domicilio-row').classList.toggle('d-none', this._tipo !== 'domicilio');
@@ -191,8 +275,30 @@ const Ventas = {
       });
     });
 
-    // Cargo domicilio
     document.getElementById('cargo-domicilio')?.addEventListener('input', () => this._actualizarTotales());
+
+    // Método de pago
+    document.getElementById('metodo-pago')?.addEventListener('change', e => {
+      const esTransf = e.target.value === 'transferencia';
+      document.getElementById('transferencia-cargo-box').classList.toggle('d-none', !esTransf);
+      this._actualizarTotales();
+    });
+
+    // Tipo cargo transferencia (fijo / porcentaje)
+    document.querySelectorAll('.btn-cargo-tipo').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.btn-cargo-tipo').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this._cargoTransfTipo = btn.dataset.cargoTipo;
+        this._sincronizarPrefixCargo();
+        this._actualizarTotales();
+      });
+    });
+
+    document.getElementById('cargo-transferencia-val')?.addEventListener('input', () => this._actualizarTotales());
+
+    // Moneda
+    document.getElementById('moneda-pago')?.addEventListener('change', () => this._actualizarTotales());
 
     // Confirmar venta
     document.getElementById('btn-confirmar-venta')?.addEventListener('click', () => this.confirmar());
@@ -245,7 +351,6 @@ const Ventas = {
       sugerencias.innerHTML = '';
     });
 
-    // Cerrar sugerencias al hacer click fuera
     document.addEventListener('click', e => {
       if (!sugerencias?.contains(e.target) && e.target !== inputCliente) {
         if (sugerencias) sugerencias.innerHTML = '';

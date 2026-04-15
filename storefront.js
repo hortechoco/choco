@@ -5,13 +5,14 @@ const Storefront = {
   _carrito: [],
   _productos: [],
   _tipoEntrega: 'recogida',
+  _cargoTransfTipo: 'fijo',
+  _monedas: [],
 
   async iniciar() {
     const badge = document.getElementById('storefront-user-badge');
-    if (badge) {
-      badge.textContent = `${Auth.perfil?.nombre_completo} · Cliente`;
-    }
+    if (badge) badge.textContent = `${Auth.perfil?.nombre_completo} · Cliente`;
     await this._cargarProductos();
+    await this._cargarMonedas();
     this._bindEventos();
   },
 
@@ -21,6 +22,19 @@ const Storefront = {
       this._renderCatalogo();
     } catch (err) {
       UI.mostrarToast('Error cargando productos: ' + err.message, 'error');
+    }
+  },
+
+  async _cargarMonedas() {
+    try {
+      this._monedas = await fetchMonedas(true);
+      const sel = document.getElementById('storefront-moneda');
+      if (!sel) return;
+      sel.innerHTML = this._monedas.map(m =>
+        `<option value="${m.id}" data-tasa="${m.tasa_cambio}" data-simbolo="${m.simbolo}" data-nombre="${m.nombre}">${m.nombre} (${m.simbolo})</option>`
+      ).join('');
+    } catch (err) {
+      console.warn('Error cargando monedas:', err.message);
     }
   },
 
@@ -55,21 +69,13 @@ const Storefront = {
 
   _agregarAlCarrito(producto) {
     const existente = this._carrito.find(i => i.productoId === producto.id);
-    if (existente) {
-      existente.cantidad++;
-    } else {
-      this._carrito.push({
-        productoId: producto.id,
-        nombre:     producto.nombre,
-        precio:     Number(producto.precio),
-        cantidad:   1,
-      });
-    }
+    if (existente) existente.cantidad++;
+    else this._carrito.push({ productoId: producto.id, nombre: producto.nombre, precio: Number(producto.precio), cantidad: 1 });
     this._renderCarrito();
   },
 
   _renderCarrito() {
-    const container   = document.getElementById('storefront-carrito-items');
+    const container    = document.getElementById('storefront-carrito-items');
     const btnConfirmar = document.getElementById('btn-confirmar-pedido');
 
     if (!this._carrito.length) {
@@ -100,10 +106,7 @@ const Storefront = {
         const id = Number(btn.dataset.id);
         if (btn.dataset.action === 'inc')    this._cambiarCantidad(id, +1);
         if (btn.dataset.action === 'dec')    this._cambiarCantidad(id, -1);
-        if (btn.dataset.action === 'remove') {
-          this._carrito = this._carrito.filter(i => i.productoId !== id);
-          this._renderCarrito();
-        }
+        if (btn.dataset.action === 'remove') { this._carrito = this._carrito.filter(i => i.productoId !== id); this._renderCarrito(); }
       });
     });
 
@@ -124,15 +127,34 @@ const Storefront = {
     const cargo    = this._tipoEntrega === 'domicilio'
       ? Number(document.getElementById('storefront-cargo')?.value ?? 0) || 0
       : 0;
+
+    // Cargo transferencia (sólo informativo para el cliente; el vendedor lo define)
+    // En el storefront el cargo de transf no aplica — el vendedor lo ajustará al confirmar
     const total = subtotal + cargo;
 
-    document.getElementById('storefront-subtotal').textContent     = `$${subtotal.toFixed(2)}`;
-    document.getElementById('storefront-cargo-valor').textContent  = `$${cargo.toFixed(2)}`;
-    document.getElementById('storefront-total').textContent        = `$${total.toFixed(2)}`;
+    document.getElementById('storefront-subtotal').textContent    = `$${subtotal.toFixed(2)}`;
+    document.getElementById('storefront-cargo-valor').textContent = `$${cargo.toFixed(2)}`;
+    document.getElementById('storefront-total').textContent       = `$${total.toFixed(2)}`;
 
     const cargoDisplay = document.getElementById('storefront-cargo-display');
     if (cargoDisplay) {
       cargoDisplay.style.setProperty('display', this._tipoEntrega === 'domicilio' ? 'flex' : 'none', 'important');
+    }
+
+    // Equivalente moneda
+    const monedaSel = document.getElementById('storefront-moneda');
+    const opt = monedaSel?.selectedOptions[0];
+    const tasa = parseFloat(opt?.dataset.tasa ?? 1);
+    const simbolo = opt?.dataset.simbolo ?? '$';
+    const nombreM = opt?.dataset.nombre ?? '';
+    const equivEl = document.getElementById('storefront-moneda-equivalente');
+    if (equivEl) {
+      if (tasa && tasa !== 1) {
+        equivEl.textContent = `≈ ${simbolo}${(total / tasa).toFixed(2)} ${nombreM}`;
+        equivEl.classList.remove('d-none');
+      } else {
+        equivEl.classList.add('d-none');
+      }
     }
   },
 
@@ -152,7 +174,7 @@ const Storefront = {
     });
 
     document.getElementById('storefront-cargo')?.addEventListener('input', () => this._actualizarTotales());
-
+    document.getElementById('storefront-moneda')?.addEventListener('change', () => this._actualizarTotales());
     document.getElementById('btn-confirmar-pedido')?.addEventListener('click', () => this.confirmarPedido());
   },
 
@@ -166,15 +188,24 @@ const Storefront = {
     const metodoPago = document.getElementById('storefront-metodo-pago').value;
     const notas      = document.getElementById('storefront-notas').value.trim() || null;
 
+    const monedaSel  = document.getElementById('storefront-moneda');
+    const opt        = monedaSel?.selectedOptions[0];
+    const monedaId   = monedaSel?.value ? Number(monedaSel.value) : null;
+
     const ventaPayload = {
-      tipo_entrega:    this._tipoEntrega,
-      cargo_domicilio: cargo,
-      metodo_pago:     metodoPago,
+      tipo_entrega:        this._tipoEntrega,
+      cargo_domicilio:     cargo,
+      metodo_pago:         metodoPago,
+      cargo_transferencia: 0,           // el vendedor ajustará si aplica
+      moneda_id:           monedaId,
+      moneda_nombre:       opt?.dataset.nombre ?? null,
+      moneda_simbolo:      opt?.dataset.simbolo ?? null,
+      moneda_tasa:         parseFloat(opt?.dataset.tasa ?? 1),
       notas,
-      total:           subtotal + cargo,
-      estado:          'pendiente',        // pedido del cliente, pendiente de confirmación
-      cliente_id:      Auth.perfil.id,     // cliente = perfil autenticado
-      vendedor_id:     null,
+      total:               subtotal + cargo,
+      estado:              'pendiente',
+      cliente_id:          Auth.perfil.id,
+      vendedor_id:         null,
     };
 
     const detalles = this._carrito.map(i => ({

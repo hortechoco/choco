@@ -36,13 +36,38 @@ async function deletePerfil(id) {
   if (error) throw error;
 }
 
-// Todos los perfiles (admin: gestión de usuarios)
 async function fetchPerfiles(filtro = '') {
   let q = db.from('perfiles').select('*').order('nombre_completo');
   if (filtro) q = q.ilike('nombre_completo', `%${filtro}%`);
   const { data, error } = await q;
   if (error) throw error;
   return data;
+}
+
+// ── MONEDAS ────────────────────────────────────────
+async function fetchMonedas(soloActivas = false) {
+  let q = db.from('monedas').select('*').order('es_base', { ascending: false }).order('nombre');
+  if (soloActivas) q = q.eq('activa', true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data;
+}
+
+async function insertMoneda(payload) {
+  const { data, error } = await db.from('monedas').insert([payload]).select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function updateMoneda(id, payload) {
+  const { data, error } = await db.from('monedas').update(payload).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function deleteMoneda(id) {
+  const { error } = await db.from('monedas').delete().eq('id', id);
+  if (error) throw error;
 }
 
 // ── PRODUCTOS ──────────────────────────────────────

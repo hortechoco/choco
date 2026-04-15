@@ -17,197 +17,223 @@
 
   <!-- NAVBAR -->
   <nav class="navbar navbar-luxury sticky-top">
-    <div class="container-fluid px-3 px-md-4">
+    <div class="navbar-top-row">
       <span class="navbar-brand-luxury">
         <span class="brand-name">Horte</span>
         <span class="brand-sep">·</span>
         <span class="brand-module" id="nav-current-module">Dashboard</span>
       </span>
-      <div class="d-flex align-items-center gap-2 gap-md-3">
+      <div class="navbar-actions">
         <span class="user-badge" id="nav-user-badge"></span>
         <button class="btn-icon btn-toggle-tema" title="Cambiar tema"><i class="bi bi-sun"></i></button>
         <button id="btn-logout" class="btn-icon" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
       </div>
     </div>
+    <div class="navbar-nav-row">
+      <div class="navbar-nav-scroll">
+        <a href="#" class="nav-pill active" data-module="dashboard"><i class="bi bi-grid-1x2"></i><span>Dashboard</span></a>
+        <a href="#" class="nav-pill" data-module="ventas"><i class="bi bi-bag-plus"></i><span>Nueva venta</span></a>
+        <a href="#" class="nav-pill" data-module="historial"><i class="bi bi-clock-history"></i><span>Historial</span></a>
+        <a href="#" class="nav-pill" data-module="clientes"><i class="bi bi-people"></i><span>Clientes</span></a>
+      </div>
+    </div>
   </nav>
 
-  <div class="d-flex" style="min-height:calc(100vh - 56px)">
+  <main class="main-content flex-grow-1 p-4">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <nav class="sidebar-nav">
-        <a href="#" class="nav-item active" data-module="dashboard"><i class="bi bi-grid-1x2"></i><span>Dashboard</span></a>
-        <a href="#" class="nav-item" data-module="ventas"><i class="bi bi-bag-plus"></i><span>Nueva venta</span></a>
-        <a href="#" class="nav-item" data-module="historial"><i class="bi bi-clock-history"></i><span>Historial</span></a>
-        <a href="#" class="nav-item" data-module="clientes"><i class="bi bi-people"></i><span>Clientes</span></a>
-      </nav>
-      <div class="sidebar-footer"><span class="sidebar-version">v2.0 · Vendedor</span></div>
-    </aside>
-
-    <!-- MAIN -->
-    <main class="main-content flex-grow-1 p-4">
-
-      <!-- DASHBOARD -->
-      <section id="view-dashboard" class="view-section">
-        <div class="view-header mb-4">
-          <h1 class="view-title">Dashboard</h1>
-          <p class="view-subtitle">Resumen del día</p>
-        </div>
-        <div class="row g-3 mb-4">
-          <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Ventas hoy</div><div class="stat-value" id="stat-ventas-hoy">—</div></div></div>
-          <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Total del día</div><div class="stat-value" id="stat-total-hoy">—</div></div></div>
-          <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Productos activos</div><div class="stat-value" id="stat-productos">—</div></div></div>
-          <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Domicilios hoy</div><div class="stat-value" id="stat-domicilios">—</div></div></div>
-        </div>
-        <div class="row g-3">
-          <div class="col-lg-7">
-            <div class="luxury-card p-4">
-              <h5 class="card-section-title mb-3">Últimas ventas</h5>
-              <div id="dashboard-ultimas-ventas"><div class="empty-state">Cargando...</div></div>
-            </div>
-          </div>
-          <div class="col-lg-5">
-            <div class="luxury-card p-4">
-              <h5 class="card-section-title mb-3">Catálogo (top 5 por precio)</h5>
-              <div id="dashboard-top-productos"><div class="empty-state">Cargando...</div></div>
-            </div>
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view-section">
+      <div class="view-header mb-4">
+        <h1 class="view-title">Dashboard</h1>
+        <p class="view-subtitle">Resumen del día</p>
+      </div>
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Ventas hoy</div><div class="stat-value" id="stat-ventas-hoy">—</div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Total del día</div><div class="stat-value" id="stat-total-hoy">—</div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Productos activos</div><div class="stat-value" id="stat-productos">—</div></div></div>
+        <div class="col-6 col-lg-3"><div class="stat-card"><div class="stat-label">Domicilios hoy</div><div class="stat-value" id="stat-domicilios">—</div></div></div>
+      </div>
+      <div class="row g-3">
+        <div class="col-lg-7">
+          <div class="luxury-card p-4">
+            <h5 class="card-section-title mb-3">Últimas ventas</h5>
+            <div id="dashboard-ultimas-ventas"><div class="empty-state">Cargando...</div></div>
           </div>
         </div>
-      </section>
-
-      <!-- VENTAS -->
-      <section id="view-ventas" class="view-section d-none">
-        <div class="view-header mb-4">
-          <h1 class="view-title">Nueva Venta</h1>
-          <p class="view-subtitle">Selecciona productos y confirma el pedido</p>
+        <div class="col-lg-5">
+          <div class="luxury-card p-4">
+            <h5 class="card-section-title mb-3">Catálogo (top 5 por precio)</h5>
+            <div id="dashboard-top-productos"><div class="empty-state">Cargando...</div></div>
+          </div>
         </div>
-        <div class="row g-4">
-          <div class="col-lg-6">
-            <div class="luxury-card p-4 h-100">
-              <div class="d-flex align-items-center justify-content-between mb-3">
-                <h5 class="card-section-title mb-0">Catálogo</h5>
-                <input type="text" id="buscar-producto" class="form-control form-control-sm input-luxury"
-                       style="max-width:160px" placeholder="Buscar...">
-              </div>
-              <div id="catalogo-productos" class="catalogo-grid">
-                <div class="empty-state">Cargando productos...</div>
+      </div>
+    </section>
+
+    <!-- VENTAS -->
+    <section id="view-ventas" class="view-section d-none">
+      <div class="view-header mb-4">
+        <h1 class="view-title">Nueva Venta</h1>
+        <p class="view-subtitle">Selecciona productos y confirma el pedido</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="luxury-card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h5 class="card-section-title mb-0">Catálogo</h5>
+              <input type="text" id="buscar-producto" class="form-control form-control-sm input-luxury"
+                     style="max-width:160px" placeholder="Buscar...">
+            </div>
+            <div id="catalogo-productos" class="catalogo-grid">
+              <div class="empty-state">Cargando productos...</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="luxury-card p-4 d-flex flex-column" style="min-height:500px">
+            <h5 class="card-section-title mb-3">Carrito</h5>
+            <div id="carrito-items" class="carrito-list flex-grow-1">
+              <div class="empty-state text-center py-5">
+                <i class="bi bi-bag" style="font-size:2rem;opacity:.2"></i>
+                <p class="mt-2 small">Sin productos aún</p>
               </div>
             </div>
-          </div>
-          <div class="col-lg-6">
-            <div class="luxury-card p-4 d-flex flex-column" style="min-height:500px">
-              <h5 class="card-section-title mb-3">Carrito</h5>
-              <div id="carrito-items" class="carrito-list flex-grow-1">
-                <div class="empty-state text-center py-5">
-                  <i class="bi bi-bag" style="font-size:2rem;opacity:.2"></i>
-                  <p class="mt-2 small">Sin productos aún</p>
+            <div class="carrito-footer mt-3">
+
+              <!-- Cliente -->
+              <div class="mb-3">
+                <label class="label-luxury mb-2">Cliente (opcional)</label>
+                <input type="hidden" id="venta-cliente-id">
+                <div class="input-group">
+                  <span class="input-group-text luxury-prefix"><i class="bi bi-person"></i></span>
+                  <input type="text" id="venta-cliente-buscar" class="form-control input-luxury" placeholder="Buscar cliente...">
+                  <button class="btn btn-luxury-outline" type="button" id="btn-limpiar-cliente" style="display:none" title="Quitar cliente"><i class="bi bi-x"></i></button>
+                </div>
+                <div id="venta-cliente-sugerencias" style="position:relative"></div>
+              </div>
+
+              <!-- Tipo entrega -->
+              <div class="mb-3">
+                <label class="label-luxury mb-2">Tipo de entrega</label>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-entrega active" data-tipo="recogida"><i class="bi bi-shop me-1"></i>Recogida</button>
+                  <button class="btn btn-entrega" data-tipo="domicilio"><i class="bi bi-bicycle me-1"></i>Domicilio</button>
                 </div>
               </div>
-              <div class="carrito-footer mt-3">
-                <!-- Cliente -->
-                <div class="mb-3">
-                  <label class="label-luxury mb-2">Cliente (opcional)</label>
-                  <input type="hidden" id="venta-cliente-id">
-                  <div class="input-group">
-                    <span class="input-group-text luxury-prefix"><i class="bi bi-person"></i></span>
-                    <input type="text" id="venta-cliente-buscar" class="form-control input-luxury" placeholder="Buscar cliente...">
-                    <button class="btn btn-luxury-outline" type="button" id="btn-limpiar-cliente" style="display:none" title="Quitar cliente"><i class="bi bi-x"></i></button>
+              <div id="cargo-domicilio-row" class="mb-3 d-none">
+                <label class="label-luxury mb-1">Cargo domicilio ($)</label>
+                <input type="number" id="cargo-domicilio" class="form-control input-luxury" min="0" step="0.01" value="0">
+              </div>
+
+              <!-- Pago -->
+              <div class="mb-2">
+                <label class="label-luxury mb-1">Método de pago</label>
+                <select id="metodo-pago" class="form-select input-luxury">
+                  <option value="efectivo">Efectivo</option>
+                  <option value="transferencia">Transferencia</option>
+                </select>
+              </div>
+
+              <!-- Cargo transferencia -->
+              <div id="transferencia-cargo-box" class="d-none mb-3">
+                <div class="transferencia-box">
+                  <label class="label-luxury mb-2">Cargo por transferencia (opcional)</label>
+                  <div class="d-flex gap-1 mb-2">
+                    <button class="btn-cargo-tipo active" data-cargo-tipo="fijo">$ Monto fijo</button>
+                    <button class="btn-cargo-tipo" data-cargo-tipo="porcentaje">% Porcentaje</button>
                   </div>
-                  <div id="venta-cliente-sugerencias" style="position:relative"></div>
-                </div>
-                <!-- Tipo entrega -->
-                <div class="mb-3">
-                  <label class="label-luxury mb-2">Tipo de entrega</label>
-                  <div class="d-flex gap-2">
-                    <button class="btn btn-entrega active" data-tipo="recogida"><i class="bi bi-shop me-1"></i>Recogida</button>
-                    <button class="btn btn-entrega" data-tipo="domicilio"><i class="bi bi-bicycle me-1"></i>Domicilio</button>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text luxury-prefix" id="cargo-transf-prefix">$</span>
+                    <input type="number" id="cargo-transferencia-val" class="form-control input-luxury" min="0" step="0.01" value="0" placeholder="0">
                   </div>
                 </div>
-                <div id="cargo-domicilio-row" class="mb-3 d-none">
-                  <label class="label-luxury mb-1">Cargo domicilio ($)</label>
-                  <input type="number" id="cargo-domicilio" class="form-control input-luxury" min="0" step="0.01" value="0">
-                </div>
-                <!-- Pago -->
-                <div class="mb-3">
-                  <label class="label-luxury mb-1">Método de pago</label>
-                  <select id="metodo-pago" class="form-select input-luxury">
-                    <option value="efectivo">Efectivo</option>
-                    <option value="transferencia">Transferencia</option>
-                    <option value="tarjeta">Tarjeta</option>
-                  </select>
-                </div>
-                <!-- Notas -->
-                <div class="mb-3">
-                  <label class="label-luxury mb-1">Notas (opcional)</label>
-                  <textarea id="venta-notas" class="form-control input-luxury" rows="2" placeholder="Indicaciones especiales..."></textarea>
-                </div>
-                <!-- Totales -->
-                <div class="carrito-total mb-3">
-                  <div class="d-flex justify-content-between mb-1"><span class="label-luxury">Subtotal</span><span id="carrito-subtotal">$0.00</span></div>
-                  <div class="d-flex justify-content-between mb-1" id="cargo-row" style="display:none!important"><span class="label-luxury">Domicilio</span><span id="carrito-cargo">$0.00</span></div>
-                  <div class="d-flex justify-content-between total-line mt-2 pt-2"><strong>Total</strong><strong id="carrito-total-val" class="text-gold">$0.00</strong></div>
-                </div>
-                <button id="btn-confirmar-venta" class="btn btn-luxury w-100" disabled>
-                  <i class="bi bi-check2-circle me-2"></i>Confirmar venta
-                </button>
               </div>
+
+              <!-- Moneda -->
+              <div class="mb-3">
+                <label class="label-luxury mb-1">Moneda de pago</label>
+                <select id="moneda-pago" class="form-select input-luxury">
+                  <option>Cargando...</option>
+                </select>
+                <div id="moneda-equivalente" class="moneda-equiv d-none"></div>
+              </div>
+
+              <!-- Notas -->
+              <div class="mb-3">
+                <label class="label-luxury mb-1">Notas (opcional)</label>
+                <textarea id="venta-notas" class="form-control input-luxury" rows="2" placeholder="Indicaciones especiales..."></textarea>
+              </div>
+
+              <!-- Totales -->
+              <div class="carrito-total mb-3">
+                <div class="d-flex justify-content-between mb-1"><span class="label-luxury">Subtotal</span><span id="carrito-subtotal">$0.00</span></div>
+                <div class="d-flex justify-content-between mb-1" id="cargo-row" style="display:none!important"><span class="label-luxury">Domicilio</span><span id="carrito-cargo">$0.00</span></div>
+                <div class="d-flex justify-content-between mb-1" id="cargo-transf-row" style="display:none!important"><span class="label-luxury">Transf.</span><span id="carrito-cargo-transf">$0.00</span></div>
+                <div class="d-flex justify-content-between total-line mt-2 pt-2">
+                  <strong>Total</strong>
+                  <strong id="carrito-total-val" class="text-gold">$0.00</strong>
+                </div>
+              </div>
+
+              <button id="btn-confirmar-venta" class="btn btn-luxury w-100" disabled>
+                <i class="bi bi-check2-circle me-2"></i>Confirmar venta
+              </button>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- HISTORIAL -->
-      <section id="view-historial" class="view-section d-none">
-        <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
-          <div class="view-header">
-            <h1 class="view-title">Historial</h1>
-            <p class="view-subtitle">Todos los pedidos registrados</p>
-          </div>
-          <div class="d-flex gap-2 align-items-end flex-wrap">
-            <div><label class="label-luxury mb-1" style="font-size:.62rem">Desde</label><input type="date" id="filtro-desde" class="form-control form-control-sm input-luxury"></div>
-            <div><label class="label-luxury mb-1" style="font-size:.62rem">Hasta</label><input type="date" id="filtro-hasta" class="form-control form-control-sm input-luxury"></div>
-            <button id="btn-filtrar" class="btn btn-sm btn-luxury-outline"><i class="bi bi-funnel"></i></button>
-          </div>
+    <!-- HISTORIAL -->
+    <section id="view-historial" class="view-section d-none">
+      <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+        <div class="view-header">
+          <h1 class="view-title">Historial</h1>
+          <p class="view-subtitle">Todos los pedidos registrados</p>
         </div>
-        <div class="luxury-card">
-          <div class="table-responsive">
-            <table class="table table-luxury mb-0">
-              <thead><tr><th>#</th><th>Fecha</th><th>Tipo</th><th>Pago</th><th>Estado</th><th>Total</th><th>Notas</th><th></th></tr></thead>
-              <tbody id="historial-tbody"><tr><td colspan="8" class="empty-state text-center py-4">Cargando...</td></tr></tbody>
-            </table>
-          </div>
+        <div class="d-flex gap-2 align-items-end flex-wrap">
+          <div><label class="label-luxury mb-1" style="font-size:.62rem">Desde</label><input type="date" id="filtro-desde" class="form-control form-control-sm input-luxury"></div>
+          <div><label class="label-luxury mb-1" style="font-size:.62rem">Hasta</label><input type="date" id="filtro-hasta" class="form-control form-control-sm input-luxury"></div>
+          <button id="btn-filtrar" class="btn btn-sm btn-luxury-outline"><i class="bi bi-funnel"></i></button>
         </div>
-      </section>
+      </div>
+      <div class="luxury-card">
+        <div class="table-responsive">
+          <table class="table table-luxury mb-0">
+            <thead><tr><th>#</th><th>Fecha</th><th>Tipo</th><th>Pago</th><th>Estado</th><th>Total</th><th>Notas</th><th></th></tr></thead>
+            <tbody id="historial-tbody"><tr><td colspan="8" class="empty-state text-center py-4">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
-      <!-- CLIENTES -->
-      <section id="view-clientes" class="view-section d-none">
-        <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
-          <div class="view-header">
-            <h1 class="view-title">Clientes</h1>
-            <p class="view-subtitle">Directorio de clientes</p>
-          </div>
-          <div class="d-flex gap-2 align-items-end">
-            <input type="text" id="buscar-cliente" class="form-control form-control-sm input-luxury" style="max-width:200px" placeholder="Buscar...">
-            <button id="btn-nuevo-cliente" class="btn btn-luxury"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
-          </div>
+    <!-- CLIENTES -->
+    <section id="view-clientes" class="view-section d-none">
+      <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+        <div class="view-header">
+          <h1 class="view-title">Clientes</h1>
+          <p class="view-subtitle">Directorio de clientes</p>
         </div>
-        <div class="luxury-card">
-          <div class="table-responsive">
-            <table class="table table-luxury mb-0">
-              <thead><tr><th>#</th><th>Nombre</th><th>Teléfono</th><th>CI</th><th>Dirección</th><th></th></tr></thead>
-              <tbody id="clientes-tbody"><tr><td colspan="6" class="empty-state text-center py-4">Cargando...</td></tr></tbody>
-            </table>
-          </div>
+        <div class="d-flex gap-2 align-items-end">
+          <input type="text" id="buscar-cliente" class="form-control form-control-sm input-luxury" style="max-width:200px" placeholder="Buscar...">
+          <button id="btn-nuevo-cliente" class="btn btn-luxury"><i class="bi bi-plus-lg me-2"></i>Nuevo</button>
         </div>
-      </section>
+      </div>
+      <div class="luxury-card">
+        <div class="table-responsive">
+          <table class="table table-luxury mb-0">
+            <thead><tr><th>#</th><th>Nombre</th><th>Teléfono</th><th>CI</th><th>Dirección</th><th></th></tr></thead>
+            <tbody id="clientes-tbody"><tr><td colspan="6" class="empty-state text-center py-4">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
-    </main>
-  </div>
+  </main>
 
   <div id="global-loader" class="global-loader d-none"><div class="loader-ring"></div></div>
   <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999"></div>
 
-  <!-- ══ MODALES ════════════════════════════════════ -->
+  <!-- MODALES -->
 
   <!-- Detalle venta -->
   <div class="modal fade" id="modal-detalle-venta" tabindex="-1">
@@ -286,7 +312,7 @@
     </div>
   </div>
 
-  <!-- ══ SCRIPTS ════════════════════════════════════ -->
+  <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
@@ -301,18 +327,17 @@
   <script>
     (async function () {
       const ok = await Auth.iniciar();
-      if (!ok || Auth.esCliente) { window.location.href = 'index.html'; return; }
+      if (!ok || Auth.esCliente) { window.location.href = 'login.html'; return; }
       if (Auth.esAdmin)          { window.location.href = 'admin.html'; return; }
 
       const badge = document.getElementById('nav-user-badge');
       if (badge) badge.textContent = `${Auth.perfil?.nombre_completo ?? 'Vendedor'} · vendedor`;
 
       document.getElementById('btn-logout').addEventListener('click', () => {
-        Auth.signOut();
-        window.location.href = 'index.html';
+        Auth.signOut(); window.location.href = 'login.html';
       });
 
-      document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
+      document.querySelectorAll('.nav-pill[data-module]').forEach(item => {
         item.addEventListener('click', e => { e.preventDefault(); _navegarA(item.dataset.module); });
       });
 
@@ -321,7 +346,7 @@
       document.getElementById('buscar-cliente')?.addEventListener('input', e => Clientes.cargar(e.target.value));
 
       await Productos.cargar();
-      Ventas.iniciar();
+      await Ventas.iniciar();
       Historial.iniciarFiltros();
 
       _navegarA('dashboard');

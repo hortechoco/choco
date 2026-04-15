@@ -17,13 +17,13 @@
 
   <!-- NAVBAR -->
   <nav class="navbar navbar-luxury sticky-top">
-    <div class="container-fluid px-3 px-md-4">
+    <div class="navbar-top-row">
       <span class="navbar-brand-luxury">
         <span class="brand-name">Horte</span>
         <span class="brand-sep">·</span>
         <span class="brand-module">Tienda</span>
       </span>
-      <div class="d-flex align-items-center gap-2 gap-md-3">
+      <div class="navbar-actions">
         <span class="user-badge" id="storefront-user-badge"></span>
         <button class="btn-icon btn-toggle-tema" title="Cambiar tema"><i class="bi bi-sun"></i></button>
         <button id="btn-logout-storefront" class="btn-icon" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
@@ -85,8 +85,16 @@
               <select id="storefront-metodo-pago" class="form-select input-luxury">
                 <option value="efectivo">Efectivo</option>
                 <option value="transferencia">Transferencia</option>
-                <option value="tarjeta">Tarjeta</option>
               </select>
+            </div>
+
+            <!-- Moneda -->
+            <div class="mb-3">
+              <label class="label-luxury mb-1">Moneda de pago</label>
+              <select id="storefront-moneda" class="form-select input-luxury">
+                <option>Cargando...</option>
+              </select>
+              <div id="storefront-moneda-equivalente" class="moneda-equiv d-none"></div>
             </div>
 
             <!-- Notas -->
@@ -122,12 +130,9 @@
     </div>
   </div>
 
-  <!-- LOADER -->
   <div id="global-loader" class="global-loader d-none"><div class="loader-ring"></div></div>
-  <!-- TOASTS -->
   <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999"></div>
 
-  <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
@@ -138,12 +143,11 @@
   <script>
     (async function () {
       const ok = await Auth.iniciar();
-      if (!ok)             { window.location.href = 'index.html'; return; }
+      if (!ok)             { window.location.href = 'login.html'; return; }
       if (!Auth.esCliente) { window.location.href = Auth.esAdmin ? 'admin.html' : 'vendedor.html'; return; }
 
       document.getElementById('btn-logout-storefront').addEventListener('click', () => {
-        Auth.signOut();
-        window.location.href = 'index.html';
+        Auth.signOut(); window.location.href = 'login.html';
       });
 
       await Storefront.iniciar();
