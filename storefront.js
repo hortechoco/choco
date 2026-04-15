@@ -5,12 +5,33 @@ const Storefront = {
   _carrito: [],
   _productos: [],
   _tipoEntrega: 'recogida',
-  _cargoTransfTipo: 'fijo',
+  _usarDirGuardada: true,
   _monedas: [],
 
   async iniciar() {
     const badge = document.getElementById('storefront-user-badge');
     if (badge) badge.textContent = `${Auth.perfil?.nombre_completo} · Cliente`;
+
+    // Min fecha = hoy
+    const hoy = new Date().toISOString().split('T')[0];
+    const fechaInput = document.getElementById('storefront-fecha-entrega');
+    if (fechaInput) fechaInput.min = hoy;
+
+    // Pre-cargar dirección guardada
+    const dirLabel = document.getElementById('storefront-dir-guardada-label');
+    if (dirLabel) {
+      const dir = Auth.perfil?.direccion;
+      dirLabel.textContent = dir || 'Sin dirección guardada';
+      if (!dir) {
+        // Si no tiene dirección guardada, mostrar automáticamente campo libre
+        document.getElementById('btn-dir-otra')?.classList.add('active');
+        document.getElementById('btn-dir-guardada')?.classList.remove('active');
+        document.getElementById('storefront-dir-custom')?.classList.remove('d-none');
+        dirLabel.classList.add('d-none');
+        this._usarDirGuardada = false;
+      }
+    }
+
     await this._cargarProductos();
     await this._cargarMonedas();
     this._bindEventos();
@@ -127,9 +148,6 @@ const Storefront = {
     const cargo    = this._tipoEntrega === 'domicilio'
       ? Number(document.getElementById('storefront-cargo')?.value ?? 0) || 0
       : 0;
-
-    // Cargo transferencia (sólo informativo para el cliente; el vendedor lo define)
-    // En el storefront el cargo de transf no aplica — el vendedor lo ajustará al confirmar
     const total = subtotal + cargo;
 
     document.getElementById('storefront-subtotal').textContent    = `$${subtotal.toFixed(2)}`;
@@ -163,13 +181,26 @@ const Storefront = {
       this._renderCatalogo(e.target.value);
     });
 
-    document.querySelectorAll('#storefront-view .btn-entrega').forEach(btn => {
+    // Tipo entrega
+    document.querySelectorAll('#storefront-view .btn-entrega[data-tipo]').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('#storefront-view .btn-entrega').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#storefront-view .btn-entrega[data-tipo]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         this._tipoEntrega = btn.dataset.tipo;
         document.getElementById('storefront-cargo-row').classList.toggle('d-none', this._tipoEntrega !== 'domicilio');
+        document.getElementById('storefront-direccion-row').classList.toggle('d-none', this._tipoEntrega !== 'domicilio');
         this._actualizarTotales();
+      });
+    });
+
+    // Toggle dirección guardada / otra
+    document.querySelectorAll('#storefront-view [data-dir]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#storefront-view [data-dir]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this._usarDirGuardada = btn.dataset.dir === 'guardada';
+        document.getElementById('storefront-dir-guardada-label').classList.toggle('d-none', !this._usarDirGuardada);
+        document.getElementById('storefront-dir-custom').classList.toggle('d-none', this._usarDirGuardada);
       });
     });
 
@@ -180,6 +211,31 @@ const Storefront = {
 
   async confirmarPedido() {
     if (!this._carrito.length) return;
+
+    // Validar fecha obligatoria
+    const fechaEntrega = document.getElementById('storefront-fecha-entrega')?.value || null;
+    if (!fechaEntrega) {
+      UI.mostrarToast('Selecciona una fecha de entrega', 'error');
+      document.getElementById('storefront-fecha-entrega')?.focus();
+      return;
+    }
+
+    const horaEntrega = document.getElementById('storefront-hora-entrega')?.value || null;
+
+    // Dirección de entrega (solo domicilio)
+    let direccionEntrega = null;
+    if (this._tipoEntrega === 'domicilio') {
+      if (this._usarDirGuardada) {
+        direccionEntrega = Auth.perfil?.direccion ?? null;
+      } else {
+        direccionEntrega = document.getElementById('storefront-dir-custom')?.value.trim() || null;
+      }
+      if (!direccionEntrega) {
+        UI.mostrarToast('Ingresa la dirección de entrega', 'error');
+        document.getElementById('storefront-dir-custom')?.focus();
+        return;
+      }
+    }
 
     const subtotal   = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
     const cargo      = this._tipoEntrega === 'domicilio'
@@ -196,7 +252,7 @@ const Storefront = {
       tipo_entrega:        this._tipoEntrega,
       cargo_domicilio:     cargo,
       metodo_pago:         metodoPago,
-      cargo_transferencia: 0,           // el vendedor ajustará si aplica
+      cargo_transferencia: 0,
       moneda_id:           monedaId,
       moneda_nombre:       opt?.dataset.nombre ?? null,
       moneda_simbolo:      opt?.dataset.simbolo ?? null,
@@ -206,6 +262,9 @@ const Storefront = {
       estado:              'pendiente',
       cliente_id:          Auth.perfil.id,
       vendedor_id:         null,
+      fecha_entrega:       fechaEntrega,
+      hora_entrega:        horaEntrega,
+      direccion_entrega:   direccionEntrega,
     };
 
     const detalles = this._carrito.map(i => ({
@@ -229,15 +288,31 @@ const Storefront = {
   },
 
   _resetear() {
-    this._carrito     = [];
-    this._tipoEntrega = 'recogida';
+    this._carrito          = [];
+    this._tipoEntrega      = 'recogida';
+    this._usarDirGuardada  = true;
+
     document.getElementById('storefront-metodo-pago').value = 'efectivo';
     document.getElementById('storefront-notas').value       = '';
     document.getElementById('storefront-cargo').value       = '0';
-    document.querySelectorAll('#storefront-view .btn-entrega').forEach(b => {
+    document.getElementById('storefront-fecha-entrega').value = '';
+    if (document.getElementById('storefront-hora-entrega'))
+      document.getElementById('storefront-hora-entrega').value = '';
+
+    document.querySelectorAll('#storefront-view .btn-entrega[data-tipo]').forEach(b => {
       b.classList.toggle('active', b.dataset.tipo === 'recogida');
     });
     document.getElementById('storefront-cargo-row').classList.add('d-none');
+    document.getElementById('storefront-direccion-row').classList.add('d-none');
+
+    // Reset dirección
+    document.getElementById('btn-dir-guardada')?.classList.add('active');
+    document.getElementById('btn-dir-otra')?.classList.remove('active');
+    document.getElementById('storefront-dir-guardada-label')?.classList.remove('d-none');
+    document.getElementById('storefront-dir-custom')?.classList.add('d-none');
+    if (document.getElementById('storefront-dir-custom'))
+      document.getElementById('storefront-dir-custom').value = '';
+
     this._renderCarrito();
   },
 };

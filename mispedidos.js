@@ -51,6 +51,26 @@ const MisPedidos = {
     const fecha    = new Date(v.fecha).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' });
     const acciones = this._acciones(v);
 
+    // Fecha/hora de entrega programada
+    let entregaInfo = '';
+    if (v.fecha_entrega) {
+      const fechaEnt = new Date(v.fecha_entrega + 'T00:00:00').toLocaleDateString('es', { dateStyle: 'medium' });
+      const horaEnt  = v.hora_entrega ? ` · ${v.hora_entrega}` : '';
+      entregaInfo = `
+        <div class="pedido-entrega-info mt-1">
+          <i class="bi bi-calendar-event me-1"></i>${v.tipo_entrega === 'domicilio' ? 'Entrega' : 'Recogida'}: <strong>${fechaEnt}${horaEnt}</strong>
+        </div>`;
+    }
+
+    // Dirección de entrega
+    let dirInfo = '';
+    if (v.tipo_entrega === 'domicilio' && v.direccion_entrega) {
+      dirInfo = `
+        <div class="pedido-entrega-info mt-1">
+          <i class="bi bi-geo-alt me-1"></i>${v.direccion_entrega}
+        </div>`;
+    }
+
     // Banner de aprobación
     let banner = '';
     if (v.aprobacion_cliente === 'pendiente') {
@@ -69,7 +89,9 @@ const MisPedidos = {
       extraBadges += `<span class="badge-aprobacion"><i class="bi bi-clock me-1"></i>Aprobación requerida</span>`;
     }
     if (v.cliente_confirmo_entrega) {
-      extraBadges += `<span class="badge-confirmado"><i class="bi bi-check2 me-1"></i>Entrega confirmada</span>`;
+      extraBadges += `<span class="badge-confirmado"><i class="bi bi-check2 me-1"></i>Recepción confirmada</span>`;
+    } else if (v.vendedor_confirmo_entrega) {
+      extraBadges += `<span class="badge-confirmado" style="opacity:.7"><i class="bi bi-check2 me-1"></i>Entregado por vendedor</span>`;
     }
 
     // Desglose de cargos
@@ -99,6 +121,7 @@ const MisPedidos = {
         ${banner}
         <div class="pedido-card-body">
           <div class="pedido-resumen">${resumen}${masItems}</div>
+          ${entregaInfo}${dirInfo}
           ${desglose}
           <div class="d-flex align-items-center justify-content-between mt-2 flex-wrap gap-2">
             <div class="d-flex gap-2 align-items-center flex-wrap">
@@ -128,12 +151,24 @@ const MisPedidos = {
       acc.push({ accion: 'aprobar', label: 'Aprobar cargos', icono: 'bi-check-circle', clase: 'btn-luxury' });
     }
 
-    // Confirmar recepción
-    if (v.estado === 'completado' && !v.cliente_confirmo_entrega) {
-      acc.push({ accion: 'confirmar', label: 'Confirmar recepción', icono: 'bi-bag-check', clase: 'btn-luxury' });
+    // Confirmar llegada/recepción
+    // Para domicilio: mostrar desde pendiente/en_proceso (la entrega puede llegar antes de que el vendedor marque completado)
+    // Para recogida: solo cuando completado
+    const puedeConfirmar = !v.cliente_confirmo_entrega && (
+      v.estado === 'completado' ||
+      (v.tipo_entrega === 'domicilio' && (v.estado === 'en_proceso' || v.estado === 'pendiente'))
+    );
+    if (puedeConfirmar) {
+      const esDomicilio = v.tipo_entrega === 'domicilio';
+      acc.push({
+        accion: 'confirmar',
+        label:  esDomicilio ? 'Confirmar llegada' : 'Confirmar recepción',
+        icono:  esDomicilio ? 'bi-bicycle'        : 'bi-bag-check',
+        clase:  'btn-luxury',
+      });
     }
 
-    // Cancelar (sólo si pendiente, o en_proceso y aún no aprobó los cargos)
+    // Cancelar (solo si pendiente, o en_proceso y aún no aprobó los cargos)
     const puedeCanc = v.estado === 'pendiente' ||
       (v.estado === 'en_proceso' && v.aprobacion_cliente !== 'aprobado');
     if (puedeCanc) {
@@ -181,14 +216,18 @@ const MisPedidos = {
   },
 
   async _confirmarEntrega(pedido) {
-    const tipo = pedido.tipo_entrega === 'domicilio' ? 'la llegada a domicilio' : 'el retiro en tienda';
-    const ok = window.confirm(`¿Confirmar ${tipo} del pedido #${pedido.id}?`);
+    const esDomicilio = pedido.tipo_entrega === 'domicilio';
+    const accion = esDomicilio ? 'la llegada del domicilio' : 'el retiro en tienda';
+    const ok = window.confirm(`¿Confirmar ${accion} del pedido #${pedido.id}?`);
     if (!ok) return;
     UI.toggleLoader(true);
     try {
       await updateVentaCliente(pedido.id, { cliente_confirmo_entrega: true });
       await notificarCambioPedidoCliente(pedido, 'confirmado_entrega', Auth.perfil);
-      UI.mostrarToast('¡Recepción confirmada! Gracias por tu compra.', 'success');
+      UI.mostrarToast(
+        esDomicilio ? '¡Llegada confirmada! Gracias por tu compra.' : '¡Recepción confirmada! Gracias por tu compra.',
+        'success'
+      );
       await this.cargar();
     } catch (err) {
       UI.mostrarToast('Error: ' + err.message, 'error');
@@ -201,7 +240,8 @@ const MisPedidos = {
   contarAccionesPendientes(lista = this._lista) {
     return lista.filter(v =>
       v.aprobacion_cliente === 'pendiente' ||
-      (v.estado === 'completado' && !v.cliente_confirmo_entrega)
+      (v.estado === 'completado' && !v.cliente_confirmo_entrega) ||
+      (v.tipo_entrega === 'domicilio' && (v.estado === 'en_proceso' || v.estado === 'pendiente') && !v.cliente_confirmo_entrega)
     ).length;
   },
 };

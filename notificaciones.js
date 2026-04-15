@@ -13,7 +13,6 @@ async function enviarNtfy(titulo, mensaje, prioridad = 'default') {
       body: mensaje,
     });
   } catch (err) {
-    // La notificación falla silenciosamente — no interrumpe el flujo
     console.warn('[ntfy] Error al enviar notificación:', err.message);
   }
 }
@@ -28,11 +27,20 @@ async function notificarNuevaVenta(venta, items, perfil = null) {
     `Items: ${resumen}`,
   ];
 
+  // Fecha y hora de entrega programada
+  if (venta.fecha_entrega) {
+    const fechaStr = new Date(venta.fecha_entrega + 'T00:00:00').toLocaleDateString('es', { dateStyle: 'medium' });
+    const horaStr  = venta.hora_entrega ? ` a las ${venta.hora_entrega}` : '';
+    lineas.push(`Fecha ${tipo.toLowerCase()}: ${fechaStr}${horaStr}`);
+  }
+
   if (perfil) {
     lineas.push(`Cliente: ${perfil.nombre_completo ?? '—'}`);
     lineas.push(`CI: ${perfil.carnet ?? '—'} | Tel: ${perfil.telefono ?? '—'}`);
     if (venta.tipo_entrega === 'domicilio') {
-      lineas.push(`Direccion: ${perfil.direccion ?? '—'}`);
+      // Usar la dirección específica del pedido si fue ingresada, si no la del perfil
+      const dir = venta.direccion_entrega || perfil.direccion;
+      if (dir) lineas.push(`Dirección: ${dir}`);
     }
   }
 
@@ -53,7 +61,7 @@ async function notificarCambioPedidoCliente(venta, tipo, perfil = null) {
       prioridad: 'default', tags: 'white_check_mark,chocolate',
     },
     confirmado_entrega: {
-      titulo: `[Horte] 📦 Pedido #${venta.id} — entrega confirmada`,
+      titulo: `[Horte] 📦 Pedido #${venta.id} — entrega confirmada por cliente`,
       prioridad: 'low', tags: 'package,chocolate',
     },
   };
@@ -66,7 +74,8 @@ async function notificarCambioPedidoCliente(venta, tipo, perfil = null) {
   if (perfil) {
     lineas.push(`Cliente: ${perfil.nombre_completo ?? '—'} | Tel: ${perfil.telefono ?? '—'}`);
     if (venta.tipo_entrega === 'domicilio' && tipo === 'cancelado_cliente') {
-      lineas.push(`Dir: ${perfil.direccion ?? '—'}`);
+      const dir = venta.direccion_entrega || perfil.direccion;
+      if (dir) lineas.push(`Dir: ${dir}`);
     }
   }
 
@@ -90,8 +99,10 @@ async function notificarModificacionPedido(ventaAntes, ventaDespues, vendedorPer
     cambios.push(`Cargo domicilio: $${Number(ventaAntes.cargo_domicilio).toFixed(2)} → $${Number(ventaDespues.cargo_domicilio).toFixed(2)}`);
   if (Number(ventaAntes.cargo_transferencia) !== Number(ventaDespues.cargo_transferencia))
     cambios.push(`Cargo transf.: $${Number(ventaAntes.cargo_transferencia).toFixed(2)} → $${Number(ventaDespues.cargo_transferencia).toFixed(2)}`);
+  if (!ventaAntes.vendedor_confirmo_entrega && ventaDespues.vendedor_confirmo_entrega)
+    cambios.push(`Entrega confirmada por vendedor`);
 
-  if (!cambios.length) return; // nada relevante cambió
+  if (!cambios.length) return;
 
   const lineas = [
     ...cambios,

@@ -169,13 +169,23 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
   justify-content: space-between;
   padding: 0 1rem;
   height: 50px;
-  gap: 1rem;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.navbar-brand-luxury {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .navbar-actions {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
   flex-shrink: 0;
 }
 
@@ -185,6 +195,7 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
 
 .navbar-nav-scroll {
   display: flex;
+  flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
   padding: 0.3rem 0.6rem;
@@ -216,16 +227,15 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
 .nav-pill:hover  { color: var(--mist); background: rgba(181,113,42,0.08); }
 .nav-pill.active { color: var(--gold); background: rgba(181,113,42,0.12); }
 
-.navbar-brand-luxury { display: flex; align-items: baseline; gap: 0.6rem; }
-
 .brand-name {
   font-family: 'Lora', serif; font-size: 1.15rem; font-weight: 600;
-  color: var(--gold); letter-spacing: 0.08em;
+  color: var(--gold); letter-spacing: 0.08em; white-space: nowrap; flex-shrink: 0;
 }
-.brand-sep { color: rgba(212,166,85,0.35); font-size: 0.9rem; }
+.brand-sep { color: rgba(212,166,85,0.35); font-size: 0.9rem; flex-shrink: 0; }
 .brand-module {
   font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase;
   color: var(--text-dim); font-weight: 300;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
 .user-badge {
@@ -233,7 +243,8 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
   color: var(--bronze); background: rgba(181,113,42,0.1);
   border: 1px solid rgba(181,113,42,0.22);
   padding: 0.28rem 0.65rem; border-radius: 100px;
-  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex-shrink: 1;
 }
 
 .btn-icon {
@@ -243,7 +254,7 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
 }
 .btn-icon:hover { color: var(--gold); background: rgba(181,113,42,0.1); }
 
-/* ── MAIN CONTENT — full width (sin sidebar) ─────── */
+/* ── MAIN CONTENT ────────────────────────────────── */
 .main-content { overflow-y: auto; min-width: 0; flex: 1; }
 .view-section { animation: fadeUp 0.3s ease; }
 @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
@@ -287,6 +298,16 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
 }
 .input-luxury::placeholder { color: var(--placeholder); }
 .input-luxury:focus { border-color: rgba(212,166,85,0.4) !important; }
+
+/* Date/time inputs — fix browser default styles */
+input[type="date"].input-luxury,
+input[type="time"].input-luxury {
+  color-scheme: dark;
+}
+[data-bs-theme="light"] input[type="date"].input-luxury,
+[data-bs-theme="light"] input[type="time"].input-luxury {
+  color-scheme: light;
+}
 
 .luxury-prefix {
   background: rgba(181,113,42,0.1); border-color: var(--border); color: var(--bronze); font-size: 0.85rem;
@@ -496,6 +517,16 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
 .imagen-preview-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem; }
 .imagen-preview-row img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); opacity: 0.9; flex-shrink: 0; }
 
+/* ── PEDIDO — info de entrega programada ─────────── */
+.pedido-entrega-info {
+  font-size: 0.74rem;
+  color: var(--bronze);
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+[data-bs-theme="light"] .pedido-entrega-info { color: var(--bronze); }
+
 /* ── LIGHT THEME OVERRIDES ────────────────────────── */
 [data-bs-theme="light"] .luxury-card {
   background: #fffdf9; border-color: rgba(74,42,31,0.15);
@@ -574,12 +605,20 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
   .stat-card { padding: 0.9rem 1rem; }
 }
 
-@media (max-width: 480px) {
+/* Ocultar badge de usuario antes para dar espacio a los botones */
+@media (max-width: 640px) {
   .user-badge { display: none; }
+}
+
+/* Ocultar brand-module en pantallas pequeñas */
+@media (max-width: 560px) {
+  .brand-module, .brand-sep { display: none; }
+  .main-content { padding: 0.75rem !important; }
+}
+
+@media (max-width: 480px) {
   .main-content { padding: 0.75rem !important; }
   .login-card { padding: 2rem 1.25rem; margin: 0.75rem; border-radius: 20px; }
-  .brand-module { display: none; }
-  .brand-sep    { display: none; }
   .detalle-grid { grid-template-columns: 1fr; gap: 0.5rem; }
 }
 
@@ -588,9 +627,11 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
   .luxury-modal { border-radius: 20px; }
   .luxury-modal .modal-header { padding: 1.25rem 1.25rem 0.75rem; }
   .luxury-modal .modal-body   { padding: 0.75rem 1.25rem 1rem; max-height: 72vh; overflow-y: auto; }
-  .luxury-modal .modal-footer { padding: 0.75rem 1.25rem 1.25rem; }
+  .luxury-modal .modal-footer { padding: 0.75rem 1.25rem 1.25rem; flex-wrap: wrap; gap: 0.5rem; }
   .detalle-items-table th,
   .detalle-items-table td { font-size: 0.73rem; padding: 0.4rem 0.2rem; }
+  /* Botón confirmar entrega: full width en móvil */
+  #btn-confirmar-entrega-pedido { width: 100%; margin-right: 0 !important; order: -1; }
 }
 
 .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }

@@ -83,7 +83,7 @@
         <div class="table-responsive">
           <table class="table table-luxury mb-0">
             <thead>
-              <tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Pago</th><th>Total</th><th>Estado</th><th></th></tr>
+              <tr><th>#</th><th>Fecha / Entrega</th><th>Cliente</th><th>Tipo</th><th>Pago</th><th>Total</th><th>Estado</th><th></th></tr>
             </thead>
             <tbody id="pedidos-tbody">
               <tr><td colspan="8" class="empty-state text-center py-4">Cargando...</td></tr>
@@ -363,26 +363,41 @@
             <div class="col-md-6">
               <div class="luxury-card p-3" style="border-radius:10px">
                 <div class="detalle-grid" style="grid-template-columns:1fr 1fr;gap:.5rem">
-                  <div class="detalle-field"><label>Fecha</label><span id="pedido-fecha-label">—</span></div>
+                  <div class="detalle-field"><label>Fecha pedido</label><span id="pedido-fecha-label">—</span></div>
                   <div class="detalle-field"><label>Tipo</label><span id="pedido-tipo-label">—</span></div>
                   <div class="detalle-field"><label>Pago</label><span id="pedido-pago-label">—</span></div>
                   <div class="detalle-field"><label>Notas</label><span id="pedido-notas-label" style="font-style:italic;font-size:.78rem">—</span></div>
                 </div>
+                <!-- Fecha / hora de entrega programada -->
+                <div id="pedido-fecha-entrega-row" class="d-none mt-2">
+                  <div class="detalle-field">
+                    <label><i class="bi bi-calendar-event me-1"></i>Entrega programada</label>
+                    <span id="pedido-fecha-entrega-label" style="color:var(--gold)">—</span>
+                  </div>
+                </div>
+                <!-- Dirección del pedido -->
+                <div id="pedido-dir-entrega-row" class="d-none mt-1">
+                  <div class="detalle-field">
+                    <label><i class="bi bi-geo-alt me-1"></i>Dirección entrega</label>
+                    <span id="pedido-dir-entrega-label" style="font-size:.8rem">—</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <!-- Dentro del modal-gestionar-pedido, tras el .detalle-grid del pedido -->
-<div id="pedido-aprobacion-row" class="d-none mt-2">
-  <div class="detalle-field">
-    <label>Aprobación cliente</label>
-    <span id="pedido-aprobacion-label">—</span>
-  </div>
-</div>
-<div id="pedido-confirmacion-row" class="d-none mt-1">
-  <div class="detalle-field">
-    <label>Confirmación entrega</label>
-    <span id="pedido-confirmacion-label">—</span>
-  </div>
-</div>
+          </div>
+
+          <!-- Aprobación / Confirmaciones -->
+          <div id="pedido-aprobacion-row" class="d-none mb-2">
+            <div class="detalle-field">
+              <label>Aprobación cliente</label>
+              <span id="pedido-aprobacion-label">—</span>
+            </div>
+          </div>
+          <div id="pedido-confirmacion-row" class="d-none mb-3">
+            <div class="detalle-field">
+              <label>Confirmaciones</label>
+              <span id="pedido-confirmacion-label">—</span>
+            </div>
           </div>
 
           <!-- Items -->
@@ -417,7 +432,7 @@
             </div>
           </div>
 
-          <!-- Totales resumen -->
+          <!-- Totales -->
           <div class="carrito-total mt-3">
             <div class="d-flex justify-content-between mb-1">
               <span class="label-luxury">Subtotal</span><span id="pedido-subtotal">$0.00</span>
@@ -434,7 +449,11 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer border-0 pt-0">
+        <div class="modal-footer border-0 pt-0 gap-2">
+          <!-- Confirmar entrega (a la izquierda) -->
+          <button type="button" id="btn-confirmar-entrega-pedido" class="btn btn-luxury me-auto">
+            <i class="bi bi-check2-all me-1"></i>Confirmar entrega
+          </button>
           <button type="button" class="btn btn-luxury-outline" data-bs-dismiss="modal">Cancelar</button>
           <button type="button" id="btn-guardar-pedido" class="btn btn-luxury">
             <span id="btn-guardar-pedido-label">Guardar cambios</span>

@@ -80,6 +80,7 @@
           </div>
 
           <div class="carrito-footer mt-3">
+
             <!-- Tipo entrega -->
             <div class="mb-3">
               <label class="label-luxury mb-2">Tipo de entrega</label>
@@ -91,6 +92,36 @@
             <div id="storefront-cargo-row" class="mb-3 d-none">
               <label class="label-luxury mb-1">Cargo domicilio ($)</label>
               <input type="number" id="storefront-cargo" class="form-control input-luxury" min="0" step="0.01" value="0">
+            </div>
+
+            <!-- Dirección de entrega (solo domicilio) -->
+            <div id="storefront-direccion-row" class="mb-3 d-none">
+              <label class="label-luxury mb-2">Dirección de entrega *</label>
+              <div class="d-flex gap-2 mb-2">
+                <button class="btn btn-entrega active" data-dir="guardada" id="btn-dir-guardada">
+                  <i class="bi bi-house me-1"></i>Guardada
+                </button>
+                <button class="btn btn-entrega" data-dir="otra" id="btn-dir-otra">
+                  <i class="bi bi-pencil me-1"></i>Otra
+                </button>
+              </div>
+              <div id="storefront-dir-guardada-label"
+                   style="font-size:.78rem;color:var(--text-dim);padding:.35rem .5rem;background:rgba(181,113,42,.06);border-radius:6px;border:1px solid var(--border)">
+              </div>
+              <input type="text" id="storefront-dir-custom" class="form-control input-luxury d-none"
+                     placeholder="Calle, número, referencia...">
+            </div>
+
+            <!-- Fecha y hora de entrega -->
+            <div class="row g-2 mb-3">
+              <div class="col-7">
+                <label class="label-luxury mb-1">Fecha de entrega *</label>
+                <input type="date" id="storefront-fecha-entrega" class="form-control input-luxury">
+              </div>
+              <div class="col-5">
+                <label class="label-luxury mb-1">Hora (opcional)</label>
+                <input type="time" id="storefront-hora-entrega" class="form-control input-luxury">
+              </div>
             </div>
 
             <!-- Pago -->
@@ -176,7 +207,6 @@
         Auth.signOut(); window.location.href = 'index.html';
       });
 
-      // ── Navegación Catálogo / Mis Pedidos ──────────
       async function _navegarVista(view) {
         document.querySelectorAll('.nav-pill[data-view]').forEach(p =>
           p.classList.toggle('active', p.dataset.view === view));
@@ -203,10 +233,8 @@
         });
       });
 
-      // ── Iniciar storefront ─────────────────────────
       await Storefront.iniciar();
 
-      // ── Pre-cargar badge de pedidos pendientes ─────
       try {
         const pedidosPrevios = await fetchMisPedidos(Auth.perfil.id);
         const n = MisPedidos.contarAccionesPendientes(pedidosPrevios);
