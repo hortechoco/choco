@@ -1,178 +1,1517 @@
-// clientes.js — directorio de clientes (perfiles con rol='cliente')
-// Depende de: supabase.js, ui.js
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Horte — Tienda</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <script src="settings.js"></script>
+  <script src="theme.js"></script>
 
-const Clientes = {
-  _lista: [],
-  _modal: null,
-  _modalHistorial: null,
+  <style>
+    /* ═══════════════════════════════════════════════
+       HORTE STOREFRONT — EDICIÓN LUXURY
+       Cormorant Garamond + Jost · Dark Chocolate
+    ═══════════════════════════════════════════════ */
 
-  async cargar(filtro = '') {
-    try {
-      this._lista = await fetchClientes(filtro);
-      this._renderTabla();
-    } catch (err) {
-      UI.mostrarToast('Error cargando clientes: ' + err.message, 'error');
+    :root {
+      --ink:    #0e0a07;
+      --cacao:  #160e09;
+      --deep:   #1a0f09;
+      --bronze: #b5712a;
+      --gold:   #d4a655;
+      --warm:   #c9a06a;
+      --mist:   #f2ece4;
+      --cream:  #faf7f2;
+      --line:   rgba(181,113,42,0.18);
     }
-  },
 
-  _renderTabla() {
-    const tbody = document.getElementById('clientes-tbody');
-    if (!tbody) return;
+    *, *::before, *::after { box-sizing: border-box; }
 
-    if (!this._lista.length) {
-      tbody.innerHTML = `<tr><td colspan="6" class="empty-state text-center py-4">No hay clientes registrados</td></tr>`;
-      return;
+    body {
+      font-family: 'Jost', sans-serif;
+      background: var(--ink);
+      color: var(--mist);
+      overflow-x: hidden;
     }
 
-    tbody.innerHTML = this._lista.map(c => `
-      <tr>
-        <td style="font-family:'Lora',serif;color:var(--bronze)">#${c.id}</td>
-        <td style="font-weight:400">${c.nombre_completo}</td>
-        <td style="color:var(--text-body);font-size:.82rem">${c.telefono ?? '—'}</td>
-        <td style="color:var(--text-body);font-size:.82rem">${c.carnet ?? '—'}</td>
-        <td style="color:var(--text-dim);font-size:.78rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.direccion ?? '—'}</td>
-        <td class="text-end">
-          <button class="btn btn-sm btn-luxury-outline me-1" data-action="historial" data-id="${c.id}" title="Ver compras">
-            <i class="bi bi-clock-history"></i>
-          </button>
-          <button class="btn btn-sm btn-luxury-outline me-1" data-action="editar" data-id="${c.id}">
-            <i class="bi bi-pencil"></i>
-          </button>
-          <button class="btn btn-sm btn-luxury-outline" data-action="eliminar" data-id="${c.id}" style="border-color:rgba(224,112,112,.25);color:#e07070">
-            <i class="bi bi-trash"></i>
-          </button>
-        </td>
-      </tr>`).join('');
+    /* Grain overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.6;
+    }
 
-    tbody.querySelectorAll('[data-action]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const { action, id } = btn.dataset;
-        const cliente = this._lista.find(c => String(c.id) === String(id));
-        if (action === 'editar')    this.abrirModal(cliente);
-        if (action === 'eliminar')  this._eliminar(cliente);
-        if (action === 'historial') this._mostrarHistorial(cliente);
-      });
-    });
-  },
+    /* ── NAVBAR ──────────────────────────────────── */
+    .lux-nav {
+      position: sticky;
+      top: 0;
+      z-index: 500;
+      background: rgba(14,10,7,0.92);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+    }
 
-  abrirModal(cliente = null) {
-    document.getElementById('modal-cliente-titulo').textContent = cliente ? 'Editar Cliente' : 'Nuevo Cliente';
-    document.getElementById('cliente-id').value          = cliente?.id ?? '';
-    document.getElementById('cliente-nombre').value      = cliente?.nombre_completo ?? '';
-    document.getElementById('cliente-tel').value         = cliente?.telefono ?? '';
-    document.getElementById('cliente-ci').value          = cliente?.carnet ?? '';       // carnet en BD
-    document.getElementById('cliente-direccion').value   = cliente?.direccion ?? '';
-    document.getElementById('cliente-notas').value       = cliente?.notas ?? '';
+    .lux-nav__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(1rem, 4vw, 3rem);
+      height: 56px;
+    }
 
-    // Mostrar/ocultar aviso de PIN según si es nuevo o edición
-    const pinAviso = document.getElementById('cliente-pin-aviso');
-    if (pinAviso) pinAviso.classList.toggle('d-none', !!cliente);
+    .lux-brand {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 300;
+      letter-spacing: 0.18em;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
 
-    if (!this._modal) this._modal = new bootstrap.Modal(document.getElementById('modal-cliente'));
-    this._modal.show();
-  },
+    .lux-brand__sub {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.58rem;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: rgba(242,236,228,0.32);
+      font-weight: 300;
+      margin-left: 0.8rem;
+    }
 
-  async guardar() {
-    const id      = document.getElementById('cliente-id').value;
-    const nombre  = document.getElementById('cliente-nombre').value.trim();
-    const telefono = document.getElementById('cliente-tel').value.trim();
+    .lux-nav__actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
 
-    if (!nombre)   return UI.mostrarToast('El nombre es obligatorio', 'error');
-    if (!id && !telefono) return UI.mostrarToast('El teléfono es obligatorio para crear un cliente', 'error');
+    .lux-user-badge {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--bronze);
+      background: rgba(181,113,42,0.08);
+      border: 1px solid rgba(181,113,42,0.2);
+      padding: 0.3rem 0.75rem;
+      border-radius: 2px;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-    const payload = {
-      nombre_completo: nombre,
-      telefono:  telefono || null,
-      carnet:    document.getElementById('cliente-ci').value.trim()        || null,
-      direccion: document.getElementById('cliente-direccion').value.trim() || null,
-      notas:     document.getElementById('cliente-notas').value.trim()     || null,
-    };
+    .lux-btn-icon {
+      background: none;
+      border: none;
+      color: rgba(242,236,228,0.38);
+      font-size: 0.95rem;
+      padding: 0.35rem 0.45rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .lux-btn-icon:hover { color: var(--gold); }
 
-    const spinner = document.getElementById('btn-guardar-cliente-spinner');
-    const label   = document.getElementById('btn-guardar-cliente-label');
-    spinner.classList.remove('d-none');
-    label.textContent = 'Guardando...';
+    .lux-nav__tabs {
+      border-top: 1px solid var(--line);
+      display: flex;
+      padding: 0 clamp(1rem, 4vw, 3rem);
+      gap: 0;
+    }
 
-    try {
-      if (id) {
-        await updateCliente(id, payload);
-        UI.mostrarToast('Cliente actualizado', 'success');
-      } else {
-        const nuevo = await insertCliente(payload);
-        UI.mostrarToast(
-          `Cliente registrado — PIN de acceso: ${nuevo.pin}`,
-          'info'
-        );
+    .lux-tab {
+      position: relative;
+      font-family: 'Jost', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      font-weight: 300;
+      color: rgba(242,236,228,0.38);
+      padding: 0.85rem 1.6rem 0.85rem 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: color 0.25s;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      text-decoration: none;
+    }
+    .lux-tab + .lux-tab { margin-left: 2rem; }
+    .lux-tab::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 1.6rem;
+      height: 1px;
+      background: var(--gold);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+    .lux-tab:hover { color: rgba(242,236,228,0.7); }
+    .lux-tab.active { color: var(--gold); }
+    .lux-tab.active::after { transform: scaleX(1); }
+
+    .lux-tab__badge {
+      display: none;
+      background: var(--bronze);
+      color: #fff;
+      font-size: 0.52rem;
+      font-weight: 500;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 8px;
+      line-height: 16px;
+      text-align: center;
+      padding: 0 4px;
+    }
+
+    /* ── HERO BAND (catálogo) ─────────────────────── */
+    .storefront-hero {
+      position: relative;
+      height: clamp(220px, 35vw, 400px);
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .storefront-hero__bg {
+      position: absolute;
+      inset: 0;
+      background:
+        url('https://images.unsplash.com/photo-1548907040-4cff2a9e3f68?auto=format&fit=crop&w=1800&q=85')
+        center / cover no-repeat;
+      animation: slow-drift 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes slow-drift {
+      from { transform: scale(1.06) translate(0,0); }
+      to   { transform: scale(1.06) translate(-10px,-6px); }
+    }
+
+    .storefront-hero__bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to top, rgba(14,10,7,1) 0%, rgba(14,10,7,0.55) 50%, rgba(14,10,7,0.2) 100%);
+    }
+
+    .storefront-hero__content {
+      position: relative;
+      z-index: 2;
+      padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1.2rem, 5vw, 4rem) clamp(1.8rem, 3vw, 2.8rem);
+      animation: rise-up 0.9s 0.2s ease both;
+    }
+
+    @keyframes rise-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .storefront-hero__eyebrow {
+      font-size: 0.62rem;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--bronze);
+      font-weight: 300;
+      margin-bottom: 0.7rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .storefront-hero__eyebrow::before {
+      content: '';
+      display: block;
+      width: 28px;
+      height: 1px;
+      background: var(--bronze);
+    }
+
+    .storefront-hero__title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.2rem, 5vw, 4.5rem);
+      font-weight: 300;
+      letter-spacing: -0.01em;
+      line-height: 1.05;
+      color: var(--cream);
+    }
+
+    .storefront-hero__title em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    /* ── TICKER ──────────────────────────────────── */
+    .lux-ticker {
+      background: var(--bronze);
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 0.7rem 0;
+    }
+    .lux-ticker__inner {
+      display: inline-flex;
+      gap: 3.5rem;
+      animation: ticker 30s linear infinite;
+      font-family: 'Jost', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      font-weight: 300;
+      color: rgba(14,10,7,0.7);
+    }
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* ── MAIN LAYOUT ─────────────────────────────── */
+    .storefront-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 0;
+      min-height: calc(100vh - 56px);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ── CATALOG PANEL ───────────────────────────── */
+    .catalog-panel {
+      border-right: 1px solid var(--line);
+      padding: clamp(2rem, 4vw, 3.5rem) clamp(1.2rem, 4vw, 3.5rem);
+    }
+
+    .catalog-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .catalog-head__title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.5rem, 2.8vw, 2.4rem);
+      font-weight: 300;
+      letter-spacing: -0.01em;
+      color: var(--cream);
+    }
+
+    .lux-search {
+      background: rgba(181,113,42,0.05);
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      color: var(--mist);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      padding: 0.5rem 1rem;
+      outline: none;
+      width: 180px;
+      transition: border-color 0.25s, width 0.3s;
+    }
+    .lux-search::placeholder { color: rgba(242,236,228,0.22); }
+    .lux-search:focus { border-color: rgba(181,113,42,0.45); width: 220px; }
+
+    /* ── PRODUCT GRID ────────────────────────────── */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1px;
+      background: rgba(181,113,42,0.1);
+    }
+
+    .prod-card {
+      background: var(--deep);
+      cursor: pointer;
+      transition: background 0.35s;
+      position: relative;
+      overflow: hidden;
+      animation: card-in 0.5s ease both;
+    }
+
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .prod-card:hover { background: #1f1309; }
+
+    .prod-card__img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      opacity: 0.75;
+      transition: opacity 0.35s, transform 0.5s;
+      display: block;
+    }
+    .prod-card:hover .prod-card__img { opacity: 0.9; transform: scale(1.04); }
+
+    .prod-card__placeholder {
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: radial-gradient(ellipse at 30% 40%, rgba(181,113,42,0.12) 0%, transparent 70%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .prod-card__placeholder i {
+      font-size: 1.8rem;
+      color: rgba(181,113,42,0.22);
+    }
+
+    .prod-card__body {
+      padding: 1.1rem 1.2rem 1.3rem;
+    }
+
+    .prod-card__num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.68rem;
+      color: rgba(181,113,42,0.4);
+      letter-spacing: 0.14em;
+      margin-bottom: 0.4rem;
+    }
+
+    .prod-card__name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem;
+      font-weight: 400;
+      color: var(--cream);
+      line-height: 1.25;
+      margin-bottom: 0.35rem;
+    }
+
+    .prod-card__desc {
+      font-size: 0.72rem;
+      color: rgba(242,236,228,0.4);
+      line-height: 1.65;
+      font-weight: 200;
+      margin-bottom: 0.75rem;
+    }
+
+    .prod-card__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .prod-card__price {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--gold);
+    }
+
+    .prod-card__equiv {
+      font-size: 0.65rem;
+      color: rgba(212,166,85,0.5);
+      font-weight: 300;
+    }
+
+    .prod-card__add {
+      width: 28px;
+      height: 28px;
+      border-radius: 2px;
+      background: rgba(181,113,42,0.12);
+      border: 1px solid rgba(181,113,42,0.28);
+      color: var(--bronze);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      transition: background 0.2s, border-color 0.2s;
+      opacity: 0;
+      transform: translateX(6px);
+      transition: opacity 0.25s, transform 0.25s, background 0.2s;
+    }
+    .prod-card:hover .prod-card__add {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .prod-card__add:hover { background: rgba(181,113,42,0.28); border-color: var(--bronze); }
+
+    /* ── ORDER PANEL (sidebar) ───────────────────── */
+    .order-panel {
+      background: var(--cacao);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 56px;
+      height: calc(100vh - 56px);
+      overflow-y: auto;
+      padding: 2rem 1.5rem 1.5rem;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(181,113,42,0.2) transparent;
+    }
+
+    .order-panel__title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 300;
+      letter-spacing: -0.01em;
+      color: var(--cream);
+      margin-bottom: 0.3rem;
+    }
+
+    .order-panel__sub {
+      font-size: 0.6rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(242,236,228,0.28);
+      font-weight: 300;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    /* Cart items */
+    .lux-cart {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: none;
+      margin-bottom: 1rem;
+    }
+
+    .lux-cart-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 120px;
+      gap: 0.6rem;
+      color: rgba(242,236,228,0.2);
+    }
+    .lux-cart-empty i { font-size: 1.6rem; }
+    .lux-cart-empty span { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 200; }
+
+    .lux-ci {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid rgba(181,113,42,0.07);
+    }
+    .lux-ci:last-child { border-bottom: none; }
+
+    .lux-ci__name {
+      flex: 1;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.92rem;
+      color: var(--mist);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .lux-ci__controls {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .lux-ci__btn {
+      width: 22px;
+      height: 22px;
+      background: rgba(181,113,42,0.08);
+      border: 1px solid rgba(181,113,42,0.2);
+      border-radius: 2px;
+      color: var(--bronze);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background 0.15s;
+    }
+    .lux-ci__btn:hover { background: rgba(181,113,42,0.22); }
+
+    .lux-ci__qty {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.95rem;
+      min-width: 18px;
+      text-align: center;
+      color: var(--mist);
+    }
+
+    .lux-ci__price {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.9rem;
+      color: var(--gold);
+      min-width: 48px;
+      text-align: right;
+    }
+
+    .lux-ci__remove {
+      background: none;
+      border: none;
+      color: rgba(242,236,228,0.18);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 0;
+      transition: color 0.15s;
+    }
+    .lux-ci__remove:hover { color: #c05050; }
+
+    /* Order form */
+    .order-form {
+      border-top: 1px solid var(--line);
+      padding-top: 1.2rem;
+    }
+
+    .lux-label {
+      display: block;
+      font-size: 0.58rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(242,236,228,0.35);
+      font-weight: 300;
+      margin-bottom: 0.5rem;
+    }
+
+    .lux-input, .lux-select, .lux-textarea {
+      width: 100%;
+      background: rgba(181,113,42,0.05);
+      border: 1px solid rgba(181,113,42,0.14);
+      border-radius: 2px;
+      color: var(--mist);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 300;
+      padding: 0.55rem 0.85rem;
+      outline: none;
+      transition: border-color 0.25s;
+    }
+    .lux-input:focus, .lux-select:focus, .lux-textarea:focus {
+      border-color: rgba(212,166,85,0.4);
+    }
+    .lux-input::placeholder, .lux-textarea::placeholder { color: rgba(242,236,228,0.18); }
+    .lux-select option { background: var(--cacao); }
+
+    input[type="date"].lux-input,
+    input[type="time"].lux-input { color-scheme: dark; }
+
+    .lux-delivery-btns {
+      display: flex;
+      gap: 1px;
+      background: rgba(181,113,42,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .lux-delivery-btn {
+      flex: 1;
+      background: var(--cacao);
+      border: none;
+      color: rgba(242,236,228,0.38);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.66rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-weight: 300;
+      padding: 0.55rem 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .lux-delivery-btn.active {
+      background: rgba(181,113,42,0.16);
+      color: var(--gold);
+    }
+    .lux-delivery-btn:hover:not(.active) { color: rgba(242,236,228,0.65); }
+
+    .lux-dir-btns {
+      display: flex;
+      gap: 1px;
+      background: rgba(181,113,42,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+    .lux-dir-btn {
+      flex: 1;
+      background: var(--cacao);
+      border: none;
+      color: rgba(242,236,228,0.38);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.63rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 300;
+      padding: 0.45rem 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .lux-dir-btn.active {
+      background: rgba(181,113,42,0.14);
+      color: var(--gold);
+    }
+
+    .lux-dir-label {
+      font-size: 0.72rem;
+      color: rgba(242,236,228,0.4);
+      background: rgba(181,113,42,0.06);
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      padding: 0.42rem 0.75rem;
+      font-weight: 300;
+    }
+
+    .lux-moneda-equiv {
+      font-size: 0.68rem;
+      color: var(--bronze);
+      font-weight: 300;
+      letter-spacing: 0.06em;
+      margin-top: 0.3rem;
+    }
+
+    /* Total */
+    .order-total {
+      border-top: 1px solid var(--line);
+      padding-top: 0.9rem;
+      margin-top: 0.9rem;
+    }
+
+    .order-total__line {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.3rem;
+    }
+
+    .order-total__label {
+      font-size: 0.58rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: rgba(242,236,228,0.32);
+      font-weight: 300;
+    }
+
+    .order-total__val {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.9rem;
+      color: rgba(242,236,228,0.55);
+    }
+
+    .order-total__big {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-top: 1px solid rgba(181,113,42,0.22);
+      padding-top: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .order-total__big-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--mist);
+      letter-spacing: 0.06em;
+    }
+
+    .order-total__big-val {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 400;
+      color: var(--gold);
+    }
+
+    .order-hint {
+      font-size: 0.62rem;
+      color: rgba(242,236,228,0.25);
+      font-weight: 200;
+      line-height: 1.5;
+      margin-top: 0.4rem;
+    }
+
+    /* Confirm button */
+    .btn-confirm-order {
+      width: 100%;
+      background: var(--bronze);
+      border: none;
+      color: var(--ink);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      font-weight: 500;
+      padding: 1rem 1.5rem;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background 0.25s, letter-spacing 0.25s;
+      margin-top: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+    }
+    .btn-confirm-order:hover {
+      background: var(--warm);
+      letter-spacing: 0.34em;
+    }
+    .btn-confirm-order:disabled {
+      opacity: 0.28;
+      pointer-events: none;
+    }
+
+    /* ── MIS PEDIDOS ──────────────────────────────── */
+    .mispedidos-wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: clamp(2rem, 4vw, 3.5rem) clamp(1.2rem, 4vw, 2.5rem);
+    }
+
+    .mispedidos-head {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .mispedidos-head__eyebrow {
+      font-size: 0.6rem;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--bronze);
+      font-weight: 300;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    .mispedidos-head__eyebrow::before {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: var(--bronze);
+    }
+
+    .mispedidos-head__title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 300;
+      letter-spacing: -0.01em;
+      color: var(--cream);
+    }
+
+    /* Pedido cards */
+    .pedido-card {
+      background: var(--cacao);
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      margin-bottom: 1px;
+      overflow: hidden;
+      transition: border-color 0.25s, background 0.25s;
+    }
+    .pedido-card:hover { border-color: rgba(181,113,42,0.35); background: #1c1009; }
+
+    .pedido-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.2rem 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .pedido-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      color: var(--bronze);
+      font-weight: 400;
+    }
+
+    .pedido-fecha {
+      font-size: 0.68rem;
+      color: rgba(242,236,228,0.28);
+      font-weight: 200;
+      letter-spacing: 0.06em;
+    }
+
+    .pedido-card-body { padding: 0 1.2rem 1rem; }
+
+    .pedido-resumen {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.92rem;
+      color: rgba(242,236,228,0.6);
+    }
+
+    .pedido-desglose {
+      font-size: 0.68rem;
+      color: rgba(242,236,228,0.3);
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 0.4rem;
+      font-weight: 200;
+    }
+
+    .pedido-total {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem;
+      color: var(--gold);
+    }
+
+    .pedido-notas {
+      font-size: 0.72rem;
+      color: rgba(242,236,228,0.3);
+      font-style: italic;
+      margin-top: 0.4rem;
+    }
+
+    .pedido-entrega-info {
+      font-size: 0.7rem;
+      color: var(--bronze);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.3rem;
+      font-weight: 300;
+    }
+
+    .pedido-card-footer {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      padding: 0.65rem 1.2rem;
+      border-top: 1px solid rgba(181,113,42,0.08);
+      background: rgba(181,113,42,0.02);
+    }
+
+    .aprobacion-banner {
+      margin: 0 1.2rem 0.75rem;
+      background: rgba(212,166,85,0.08);
+      border: 1px solid rgba(212,166,85,0.22);
+      border-radius: 2px;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.75rem;
+      color: var(--gold);
+      font-weight: 300;
+    }
+
+    /* Badges */
+    .badge-estado {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.58rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 1px;
+      font-weight: 400;
+      display: inline-block;
+    }
+    .badge-estado-pendiente  { background: rgba(212,166,85,0.12); color: #d4a655; }
+    .badge-estado-en_proceso { background: rgba(90,130,220,0.12); color: #90b4f0; }
+    .badge-estado-completado { background: rgba(45,140,100,0.12); color: #5ec990; }
+    .badge-estado-cancelado  { background: rgba(184,64,64,0.12);  color: #e07070; }
+
+    .badge-tipo {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.58rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      padding: 0.22rem 0.55rem;
+      border-radius: 1px;
+      font-weight: 300;
+    }
+    .badge-domicilio { background: rgba(181,113,42,0.12); color: var(--gold); }
+    .badge-recogida  { background: rgba(45,140,100,0.12); color: #5ec990; }
+
+    .badge-pago {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.58rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 0.22rem 0.55rem;
+      background: rgba(242,236,228,0.05);
+      border: 1px solid rgba(242,236,228,0.1);
+      color: rgba(242,236,228,0.45);
+      border-radius: 1px;
+    }
+
+    .badge-aprobacion {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.57rem;
+      letter-spacing: 0.12em;
+      background: rgba(212,166,85,0.1);
+      color: var(--gold);
+      border: 1px solid rgba(212,166,85,0.25);
+      padding: 0.2rem 0.5rem;
+      border-radius: 1px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .badge-confirmado {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.57rem;
+      letter-spacing: 0.1em;
+      background: rgba(45,140,100,0.12);
+      color: #5ec990;
+      border: 1px solid rgba(45,140,100,0.25);
+      padding: 0.2rem 0.5rem;
+      border-radius: 1px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    /* Action buttons on cards */
+    .btn-luxury {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 400;
+      background: var(--bronze);
+      border: none;
+      color: var(--ink);
+      padding: 0.45rem 1rem;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-luxury:hover { background: var(--warm); }
+
+    .btn-luxury-outline {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-weight: 300;
+      background: transparent;
+      border: 1px solid rgba(181,113,42,0.3);
+      color: var(--bronze);
+      padding: 0.42rem 0.9rem;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-luxury-outline:hover {
+      background: rgba(181,113,42,0.08);
+      border-color: var(--bronze);
+    }
+
+    .btn-danger-luxury {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 300;
+      background: transparent;
+      border: 1px solid rgba(224,112,112,0.3);
+      color: #e07070;
+      padding: 0.42rem 0.9rem;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-danger-luxury:hover { background: rgba(224,112,112,0.08); }
+
+    /* ── MODAL ─────────────────────────────────────── */
+    .luxury-modal {
+      background: #160e09;
+      border: 1px solid var(--line);
+      border-radius: 2px;
+    }
+    .luxury-modal .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      font-weight: 300;
+      color: var(--cream);
+    }
+    .luxury-modal .modal-header { border-bottom: 1px solid var(--line); padding: 1.2rem 1.5rem 1rem; }
+    .luxury-modal .modal-body   { padding: 1.2rem 1.5rem; color: var(--mist); }
+    .luxury-modal .modal-footer { border-top: 1px solid var(--line); padding: 0.85rem 1.5rem 1.2rem; gap: 0.5rem; }
+
+    /* ── TOAST ─────────────────────────────────────── */
+    .toast-luxury {
+      background: #160e09;
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      color: var(--mist);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 300;
+      min-width: 260px;
+    }
+    .toast-luxury .toast-body { padding: 0.9rem 1rem; display: flex; align-items: center; gap: 0.65rem; }
+    .toast-luxury.toast-success { border-left: 2px solid #5ec990; }
+    .toast-luxury.toast-error   { border-left: 2px solid #e07070; }
+    .toast-luxury.toast-info    { border-left: 2px solid var(--bronze); }
+
+    /* ── LOADER ─────────────────────────────────────── */
+    .global-loader {
+      position: fixed; inset: 0;
+      background: rgba(14,10,7,0.78);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9998; backdrop-filter: blur(4px);
+    }
+    .loader-ring {
+      width: 38px; height: 38px;
+      border: 1px solid rgba(181,113,42,0.18);
+      border-top-color: var(--bronze);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── EMPTY STATE ─────────────────────────────── */
+    .empty-state {
+      color: rgba(242,236,228,0.22);
+      font-size: 0.72rem;
+      text-align: center;
+      padding: 2rem;
+      font-family: 'Jost', sans-serif;
+      font-weight: 200;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── RESPONSIVE ──────────────────────────────── */
+    @media (max-width: 900px) {
+      .storefront-layout {
+        grid-template-columns: 1fr;
       }
-      this._modal?.hide();
-      await this.cargar();
-    } catch (err) {
-      UI.mostrarToast('Error: ' + err.message, 'error');
-    } finally {
-      spinner.classList.add('d-none');
-      label.textContent = 'Guardar';
+      .order-panel {
+        position: static;
+        height: auto;
+        border-right: none;
+        border-top: 1px solid var(--line);
+      }
+      .lux-search:focus { width: 180px; }
     }
-  },
 
-  async _eliminar(cliente) {
-    const ok = await UI.confirmarEliminacion(cliente.nombre_completo);
-    if (!ok) return;
-    try {
-      await deleteCliente(cliente.id);
-      UI.mostrarToast('Cliente eliminado', 'success');
-      await this.cargar();
-    } catch (err) {
-      UI.mostrarToast('Error: ' + err.message, 'error');
+    @media (max-width: 600px) {
+      .product-grid { grid-template-columns: repeat(2, 1fr); }
+      .lux-user-badge { display: none; }
+      .lux-brand__sub { display: none; }
     }
-  },
+  </style>
+</head>
+<body>
 
-  async _mostrarHistorial(cliente) {
-    const body   = document.getElementById('cliente-historial-body');
-    const titulo = document.getElementById('modal-cliente-historial-titulo');
-    titulo.textContent = `Compras — ${cliente.nombre_completo}`;
-    body.innerHTML = `<div class="empty-state text-center py-3">Cargando...</div>`;
+  <!-- ── NAVBAR ─────────────────────────────────── -->
+  <nav class="lux-nav">
+    <div class="lux-nav__top">
+      <div style="display:flex;align-items:baseline;gap:0">
+        <span class="lux-brand">Horte</span>
+        <span class="lux-brand__sub">Chocolatería artesanal</span>
+      </div>
+      <div class="lux-nav__actions">
+        <span class="lux-user-badge" id="storefront-user-badge"></span>
+        <button class="lux-btn-icon btn-toggle-tema" title="Cambiar tema"><i class="bi bi-sun"></i></button>
+        <button id="btn-logout-storefront" class="lux-btn-icon" title="Cerrar sesión">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+    <div class="lux-nav__tabs">
+      <a href="#" class="lux-tab active" data-view="catalogo">
+        <i class="bi bi-grid" style="font-size:.75rem"></i> Catálogo
+      </a>
+      <a href="#" class="lux-tab" data-view="mispedidos" style="position:relative">
+        <i class="bi bi-bag-check" style="font-size:.75rem"></i> Mis Pedidos
+        <span id="mispedidos-badge" class="lux-tab__badge"></span>
+      </a>
+    </div>
+  </nav>
 
-    if (!this._modalHistorial)
-      this._modalHistorial = new bootstrap.Modal(document.getElementById('modal-cliente-historial'));
-    this._modalHistorial.show();
+  <!-- ── CATÁLOGO ───────────────────────────────── -->
+  <div id="storefront-view">
 
-    try {
-      const ventas = await fetchVentasDeCliente(cliente.id);
+    <!-- Hero -->
+    <div class="storefront-hero">
+      <div class="storefront-hero__bg"></div>
+      <div class="storefront-hero__content">
+        <p class="storefront-hero__eyebrow">Temporada actual</p>
+        <h1 class="storefront-hero__title">La <em>Colección</em></h1>
+      </div>
+    </div>
 
-      if (!ventas.length) {
-        body.innerHTML = `<div class="empty-state text-center py-3">Sin compras registradas</div>`;
+    <!-- Ticker -->
+    <div class="lux-ticker" aria-hidden="true">
+      <div class="lux-ticker__inner">
+        <span>Cacao de origen único</span><span>·</span>
+        <span>Elaboración artesanal</span><span>·</span>
+        <span>Sin aditivos</span><span>·</span>
+        <span>Entrega a domicilio</span><span>·</span>
+        <span>Cacao de origen único</span><span>·</span>
+        <span>Elaboración artesanal</span><span>·</span>
+        <span>Sin aditivos</span><span>·</span>
+        <span>Entrega a domicilio</span><span>·</span>
+        <span>Cacao de origen único</span><span>·</span>
+        <span>Elaboración artesanal</span><span>·</span>
+        <span>Sin aditivos</span><span>·</span>
+        <span>Entrega a domicilio</span><span>·</span>
+      </div>
+    </div>
+
+    <!-- Main grid -->
+    <div class="storefront-layout">
+
+      <!-- Catalog panel -->
+      <div class="catalog-panel">
+        <div class="catalog-head">
+          <h2 class="catalog-head__title">Productos</h2>
+          <input type="text" id="storefront-buscar" class="lux-search" placeholder="Buscar…">
+        </div>
+        <div id="storefront-catalogo" class="product-grid">
+          <div class="empty-state" style="grid-column:1/-1">Cargando catálogo…</div>
+        </div>
+      </div>
+
+      <!-- Order panel -->
+      <aside class="order-panel">
+        <div class="order-panel__title">Tu Pedido</div>
+        <div class="order-panel__sub">Selección actual</div>
+
+        <!-- Cart items -->
+        <div id="storefront-carrito-items" class="lux-cart">
+          <div class="lux-cart-empty">
+            <i class="bi bi-bag"></i>
+            <span>Sin productos aún</span>
+          </div>
+        </div>
+
+        <!-- Order form -->
+        <div class="order-form">
+
+          <!-- Tipo entrega -->
+          <div style="margin-bottom:0.9rem">
+            <label class="lux-label">Tipo de entrega</label>
+            <div class="lux-delivery-btns">
+              <button class="lux-delivery-btn btn-entrega active" data-tipo="recogida">
+                <i class="bi bi-shop me-1"></i>Recogida
+              </button>
+              <button class="lux-delivery-btn btn-entrega" data-tipo="domicilio">
+                <i class="bi bi-bicycle me-1"></i>Domicilio
+              </button>
+            </div>
+          </div>
+
+          <!-- Dirección -->
+          <div id="storefront-direccion-row" style="margin-bottom:0.9rem;display:none!important">
+            <label class="lux-label">Dirección de entrega *</label>
+            <div class="lux-dir-btns">
+              <button class="lux-dir-btn active" data-dir="guardada" id="btn-dir-guardada">
+                <i class="bi bi-house me-1"></i>Guardada
+              </button>
+              <button class="lux-dir-btn" data-dir="otra" id="btn-dir-otra">
+                <i class="bi bi-pencil me-1"></i>Otra
+              </button>
+            </div>
+            <div id="storefront-dir-guardada-label" class="lux-dir-label"></div>
+            <input type="text" id="storefront-dir-custom" class="lux-input d-none"
+                   placeholder="Calle, número, referencia…" style="margin-top:.4rem">
+          </div>
+
+          <!-- Fecha y hora -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:0.9rem">
+            <div>
+              <label class="lux-label">Fecha entrega *</label>
+              <input type="date" id="storefront-fecha-entrega" class="lux-input">
+            </div>
+            <div>
+              <label class="lux-label">Hora (opcional)</label>
+              <input type="time" id="storefront-hora-entrega" class="lux-input">
+            </div>
+          </div>
+
+          <!-- Pago -->
+          <div style="margin-bottom:0.9rem">
+            <label class="lux-label">Método de pago</label>
+            <select id="storefront-metodo-pago" class="lux-select">
+              <option value="efectivo">Efectivo</option>
+              <option value="transferencia">Transferencia</option>
+            </select>
+          </div>
+
+          <!-- Moneda -->
+          <div style="margin-bottom:0.9rem">
+            <label class="lux-label">Moneda</label>
+            <select id="storefront-moneda" class="lux-select">
+              <option>Cargando…</option>
+            </select>
+            <div id="storefront-moneda-equivalente" class="lux-moneda-equiv d-none"></div>
+          </div>
+
+          <!-- Notas -->
+          <div style="margin-bottom:0.9rem">
+            <label class="lux-label">Notas (opcional)</label>
+            <textarea id="storefront-notas" class="lux-textarea" rows="2"
+              placeholder="Indicaciones especiales…" style="resize:none"></textarea>
+          </div>
+
+          <!-- Total -->
+          <div class="order-total">
+            <div class="order-total__line">
+              <span class="order-total__label">Subtotal</span>
+              <span class="order-total__val" id="storefront-subtotal">$0.00</span>
+            </div>
+            <div class="order-total__big">
+              <span class="order-total__big-label">Total</span>
+              <span class="order-total__big-val" id="storefront-total">$0.00</span>
+            </div>
+            <p class="order-hint">
+              <i class="bi bi-info-circle me-1"></i>
+              Los cargos de domicilio y/o transferencia los aplica el vendedor al procesar tu pedido.
+            </p>
+          </div>
+
+          <button id="btn-confirmar-pedido" class="btn-confirm-order" disabled>
+            <i class="bi bi-check2-circle"></i>
+            <span>Confirmar pedido</span>
+          </button>
+
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <!-- ── MIS PEDIDOS ────────────────────────────── -->
+  <div id="mispedidos-view" class="d-none">
+    <div class="mispedidos-wrap">
+      <div class="mispedidos-head">
+        <p class="mispedidos-head__eyebrow">Tu historial</p>
+        <h1 class="mispedidos-head__title">Mis Pedidos</h1>
+      </div>
+      <div id="mispedidos-lista">
+        <div class="empty-state">Cargando…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL EDITAR PEDIDO ───────────────────── -->
+  <div class="modal fade" id="modal-editar-pedido" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content luxury-modal">
+        <div class="modal-header">
+          <h5 class="modal-title" id="edit-pedido-titulo">Editar pedido</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="edit-pedido-id">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.9rem">
+            <div>
+              <label class="lux-label">Fecha de entrega *</label>
+              <input type="date" id="edit-pedido-fecha" class="lux-input">
+            </div>
+            <div>
+              <label class="lux-label">Hora (opcional)</label>
+              <input type="time" id="edit-pedido-hora" class="lux-input">
+            </div>
+          </div>
+          <div id="edit-pedido-dir-row">
+            <label class="lux-label">Dirección de entrega</label>
+            <input type="text" id="edit-pedido-dir" class="lux-input" placeholder="Calle, número, referencia…">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-luxury-outline" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" id="btn-guardar-edit-pedido" class="btn-luxury">
+            <span id="btn-guardar-edit-pedido-label">Guardar</span>
+            <span id="btn-guardar-edit-pedido-spinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="global-loader" class="global-loader d-none"><div class="loader-ring"></div></div>
+  <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999"></div>
+
+  <!-- ── SCRIPTS ───────────────────────────────── -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="notificaciones.js"></script>
+  <script src="ui.js"></script>
+  <script src="auth.js"></script>
+  <script src="storefront.js"></script>
+  <script src="mispedidos.js"></script>
+
+  <!-- Overrides para que storefront.js use las clases de lujo -->
+  <script>
+    /* Patch: reemplazar render de catálogo con las tarjetas luxury */
+    const _origRenderCatalogo = Storefront._renderCatalogo.bind(Storefront);
+    Storefront._renderCatalogo = function(filtro = '') {
+      const container = document.getElementById('storefront-catalogo');
+      const filtrados = filtro
+        ? this._productos.filter(p => p.nombre.toLowerCase().includes(filtro.toLowerCase()))
+        : this._productos;
+
+      if (!filtrados.length) {
+        container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">No hay productos disponibles</div>`;
         return;
       }
 
-      const totalHistorico = ventas.reduce((s, v) => s + Number(v.total), 0);
+      const { tasa, simbolo } = this._getCurrencyInfo();
 
-      body.innerHTML = `
-        <div class="d-flex justify-content-between mb-3" style="font-size:.8rem;color:var(--text-dim)">
-          <span>${ventas.length} compra${ventas.length !== 1 ? 's' : ''}</span>
-          <span class="text-gold">Total histórico: <strong>$${totalHistorico.toFixed(2)}</strong></span>
-        </div>
-        <table class="detalle-items-table w-100">
-          <thead>
-            <tr>
-              <th>#</th><th>Fecha</th><th>Tipo</th><th>Pago</th><th>Estado</th><th class="text-end">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${ventas.map(v => `
-              <tr>
-                <td style="color:var(--bronze);font-family:'Lora',serif">#${v.id}</td>
-                <td style="font-size:.78rem">${new Date(v.fecha).toLocaleString('es',{dateStyle:'short',timeStyle:'short'})}</td>
-                <td><span class="badge-tipo ${v.tipo_entrega === 'domicilio' ? 'badge-domicilio' : 'badge-recogida'}">${v.tipo_entrega}</span></td>
-                <td><span class="badge-pago">${v.metodo_pago}</span></td>
-                <td><span class="badge-estado badge-estado-${v.estado}">${v.estado}</span></td>
-                <td class="text-end text-gold">$${Number(v.total).toFixed(2)}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>`;
-    } catch (err) {
-      body.innerHTML = `<div class="empty-state text-center py-3">Error: ${err.message}</div>`;
-    }
-  },
+      container.innerHTML = filtrados.map((p, i) => {
+        const precioEquiv = tasa !== 1
+          ? `<span class="prod-card__equiv">${simbolo}${(Number(p.precio) / tasa).toFixed(2)}</span>`
+          : '';
+        const delayMs = (i % 12) * 50;
+        return `
+        <div class="prod-card" data-id="${p.id}" style="animation-delay:${delayMs}ms">
+          ${p.imagen_url
+            ? `<img class="prod-card__img" src="${p.imagen_url}" alt="${p.nombre}">`
+            : `<div class="prod-card__placeholder"><i class="bi bi-box-seam"></i></div>`}
+          <div class="prod-card__body">
+            <div class="prod-card__num">${String(i+1).padStart(2,'0')}</div>
+            <div class="prod-card__name">${p.nombre}</div>
+            ${p.descripcion ? `<div class="prod-card__desc">${p.descripcion}</div>` : ''}
+            <div class="prod-card__footer">
+              <div>
+                <div class="prod-card__price">$${Number(p.precio).toFixed(2)}</div>
+                ${precioEquiv}
+              </div>
+              <div class="prod-card__add"><i class="bi bi-plus"></i></div>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
 
-  get lista() { return this._lista; },
-};
+      container.querySelectorAll('.prod-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const prod = filtrados.find(p => String(p.id) === String(card.dataset.id));
+          if (prod) this._agregarAlCarrito(prod);
+        });
+      });
+    };
+
+    /* Patch: carrito con estilos luxury */
+    const _origRenderCarrito = Storefront._renderCarrito.bind(Storefront);
+    Storefront._renderCarrito = function() {
+      const container    = document.getElementById('storefront-carrito-items');
+      const btnConfirmar = document.getElementById('btn-confirmar-pedido');
+
+      if (!this._carrito.length) {
+        container.innerHTML = `
+          <div class="lux-cart-empty">
+            <i class="bi bi-bag"></i>
+            <span>Sin productos aún</span>
+          </div>`;
+        btnConfirmar.disabled = true;
+        this._actualizarTotales();
+        return;
+      }
+
+      container.innerHTML = this._carrito.map(item => {
+        const subtotalBase = item.precio * item.cantidad;
+        const { tasa, simbolo } = this._getCurrencyInfo();
+        const equivStr = tasa !== 1
+          ? `<div style="font-size:.63rem;color:rgba(212,166,85,0.5);text-align:right">${simbolo}${(subtotalBase/tasa).toFixed(2)}</div>`
+          : '';
+        return `
+        <div class="lux-ci">
+          <span class="lux-ci__name">${item.nombre}</span>
+          <div class="lux-ci__controls">
+            <button class="lux-ci__btn" data-action="dec" data-id="${item.productoId}">−</button>
+            <span class="lux-ci__qty">${item.cantidad}</span>
+            <button class="lux-ci__btn" data-action="inc" data-id="${item.productoId}">+</button>
+          </div>
+          <div>
+            <div class="lux-ci__price">$${subtotalBase.toFixed(2)}</div>
+            ${equivStr}
+          </div>
+          <button class="lux-ci__remove" data-action="remove" data-id="${item.productoId}"><i class="bi bi-x"></i></button>
+        </div>`;
+      }).join('');
+
+      container.querySelectorAll('[data-action]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = Number(btn.dataset.id);
+          if (btn.dataset.action === 'inc')    this._cambiarCantidad(id, +1);
+          if (btn.dataset.action === 'dec')    this._cambiarCantidad(id, -1);
+          if (btn.dataset.action === 'remove') {
+            this._carrito = this._carrito.filter(i => i.productoId !== id);
+            this._renderCarrito();
+          }
+        });
+      });
+
+      btnConfirmar.disabled = false;
+      this._actualizarTotales();
+    };
+
+    /* Patch: mostrar/ocultar row dirección usando display block/none en vez de clase Bootstrap */
+    const _origBindEventos = Storefront._bindEventos.bind(Storefront);
+    Storefront._bindEventos = function() {
+      _origBindEventos();
+      /* Re-attach delivery type toggle to use inline style instead of d-none */
+      document.querySelectorAll('#storefront-view .btn-entrega[data-tipo]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const dirRow = document.getElementById('storefront-direccion-row');
+          if (dirRow) {
+            dirRow.style.setProperty('display', btn.dataset.tipo === 'domicilio' ? 'block' : 'none', 'important');
+          }
+        });
+      });
+    };
+
+    /* ── Inicialización ── */
+    (async function () {
+      const ok = await Auth.iniciar();
+      if (!ok)             { window.location.href = 'index.html'; return; }
+      if (!Auth.esCliente) { window.location.href = Auth.esAdmin ? 'admin.html' : 'vendedor.html'; return; }
+
+      document.getElementById('btn-logout-storefront').addEventListener('click', () => {
+        Auth.signOut(); window.location.href = 'index.html';
+      });
+
+      async function _navegarVista(view) {
+        document.querySelectorAll('.lux-tab[data-view]').forEach(p =>
+          p.classList.toggle('active', p.dataset.view === view));
+        document.getElementById('storefront-view').classList.toggle('d-none', view !== 'catalogo');
+        document.getElementById('mispedidos-view').classList.toggle('d-none', view !== 'mispedidos');
+        if (view === 'mispedidos') {
+          await MisPedidos.cargar();
+          _actualizarBadge();
+        }
+      }
+
+      function _actualizarBadge() {
+        const badge = document.getElementById('mispedidos-badge');
+        const n = MisPedidos.contarAccionesPendientes();
+        badge.textContent    = n || '';
+        badge.style.display  = n ? 'inline' : 'none';
+      }
+
+      document.querySelectorAll('.lux-tab[data-view]').forEach(pill => {
+        pill.addEventListener('click', e => {
+          e.preventDefault();
+          _navegarVista(pill.dataset.view);
+        });
+      });
+
+      await Storefront.iniciar();
+
+      document.getElementById('btn-guardar-edit-pedido')?.addEventListener('click', () => MisPedidos._guardarEdicion());
+
+      try {
+        const pedidosPrevios = await fetchMisPedidos(Auth.perfil.id);
+        const n = MisPedidos.contarAccionesPendientes(pedidosPrevios);
+        const badge = document.getElementById('mispedidos-badge');
+        badge.textContent   = n || '';
+        badge.style.display = n ? 'inline' : 'none';
+      } catch (_) { /* silencioso */ }
+    })();
+  </script>
+</body>
+</html>
