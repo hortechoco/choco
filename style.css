@@ -49,7 +49,8 @@
 }
 
 * { box-sizing: border-box; }
-body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex-direction: column; min-height: 100vh; }
+/* FIX: overflow-x: hidden previene el colapso horizontal global */
+body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
 .font-lora { font-family: 'Lora', serif; }
 
 /* ── LOGIN ────────────────────────────────────────── */
@@ -67,50 +68,39 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
   border: 1px solid rgba(181,113,42,0.25);
   border-radius: 18px;
   padding: 2.5rem 2rem;
-  width: 100%;
+  /* FIX: Se ajustó el cálculo de ancho para evitar desbordes con los márgenes */
+  width: calc(100% - 2rem);
   max-width: 420px;
+  margin: 1rem auto;
   backdrop-filter: blur(14px);
   color: #f2ece4;
 }
 
-.login-card .label-luxury,
-[data-bs-theme="light"] .login-card .label-luxury {
+.login-card .label-luxury {
   color: rgba(242,236,228,0.5) !important;
 }
 
 .login-card .input-luxury,
-.login-card .input-luxury:focus,
-[data-bs-theme="light"] .login-card .input-luxury,
-[data-bs-theme="light"] .login-card .input-luxury:focus {
+.login-card .input-luxury:focus {
   background: rgba(181,113,42,0.10) !important;
   border-color: rgba(181,113,42,0.28) !important;
   color: #f2ece4 !important;
 }
 
-.login-card .input-luxury::placeholder,
-[data-bs-theme="light"] .login-card .input-luxury::placeholder {
+.login-card .input-luxury::placeholder {
   color: rgba(242,236,228,0.25) !important;
 }
 
-.login-card .input-luxury:focus,
-[data-bs-theme="light"] .login-card .input-luxury:focus {
+.login-card .input-luxury:focus {
   border-color: rgba(212,166,85,0.45) !important;
   box-shadow: none !important;
 }
 
 .login-card .luxury-prefix,
-[data-bs-theme="light"] .login-card .luxury-prefix,
-.login-card .input-group-text,
-[data-bs-theme="light"] .login-card .input-group-text {
+.login-card .input-group-text {
   background: rgba(181,113,42,0.14) !important;
   border-color: rgba(181,113,42,0.28) !important;
   color: #b5712a !important;
-}
-
-[data-bs-theme="light"] .login-card .form-select {
-  background-color: rgba(181,113,42,0.10) !important;
-  color: #f2ece4 !important;
-  border-color: rgba(181,113,42,0.28) !important;
 }
 
 .brand-name-lg {
@@ -255,7 +245,8 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
 .btn-icon:hover { color: var(--gold); background: rgba(181,113,42,0.1); }
 
 /* ── MAIN CONTENT ────────────────────────────────── */
-.main-content { overflow-y: auto; min-width: 0; flex: 1; }
+/* FIX: overflow-x: hidden previene el desborde de filas dentro del contenido */
+.main-content { overflow-y: auto; overflow-x: hidden; min-width: 0; flex: 1; }
 .view-section { animation: fadeUp 0.3s ease; }
 @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 
@@ -527,7 +518,37 @@ input[type="time"].input-luxury {
 }
 [data-bs-theme="light"] .pedido-entrega-info { color: var(--bronze); }
 
-/* ── LIGHT THEME OVERRIDES ────────────────────────── */
+/* ── LIGHT THEME OVERRIDES GLOBALES ───────────────── */
+/* FIX: Estilos de Login correctamente separados para modo claro */
+[data-bs-theme="light"] .login-screen {
+  background: linear-gradient(160deg, rgba(250,247,242,0.88) 0%, rgba(240,228,212,0.94) 100%), url('https://images.unsplash.com/photo-1548907040-4cff2a9e3f68?auto=format&fit=crop&w=1400&q=80') center / cover no-repeat;
+}
+[data-bs-theme="light"] .login-card {
+  background: rgba(255,253,249,0.94); border-color: rgba(74,42,31,0.18); color: #1a0f09;
+}
+[data-bs-theme="light"] .login-card .label-luxury { color: rgba(26,15,9,0.5) !important; }
+[data-bs-theme="light"] .login-card .input-luxury,
+[data-bs-theme="light"] .login-card .input-luxury:focus {
+  background: rgba(74,42,31,0.05) !important; border-color: rgba(74,42,31,0.18) !important; color: #1a0f09 !important;
+}
+[data-bs-theme="light"] .login-card .input-luxury::placeholder { color: rgba(26,15,9,0.35) !important; }
+[data-bs-theme="light"] .login-card .input-luxury:focus { border-color: #8c4e10 !important; }
+[data-bs-theme="light"] .login-card .luxury-prefix,
+[data-bs-theme="light"] .login-card .input-group-text {
+  background: rgba(74,42,31,0.07) !important; border-color: rgba(74,42,31,0.18) !important; color: #8c4e10 !important;
+}
+[data-bs-theme="light"] .login-card .form-select {
+  background-color: rgba(74,42,31,0.05) !important; color: #1a0f09 !important; border-color: rgba(74,42,31,0.18) !important;
+}
+[data-bs-theme="light"] .brand-name-lg { color: #7a4510; }
+[data-bs-theme="light"] .brand-sub-lg { color: rgba(26,15,9,0.45); }
+[data-bs-theme="light"] .auth-tabs { background: rgba(74,42,31,0.05); border-color: rgba(74,42,31,0.15); }
+[data-bs-theme="light"] .auth-tab { color: rgba(26,15,9,0.45); }
+[data-bs-theme="light"] .auth-tab:hover:not(.active) { color: rgba(26,15,9,0.7); background: rgba(74,42,31,0.08); }
+[data-bs-theme="light"] .auth-tab.active { background: #8c4e10; color: #fff; }
+[data-bs-theme="light"] .btn-login-tema { background: rgba(74,42,31,0.05); border-color: rgba(74,42,31,0.18); color: rgba(26,15,9,0.5); }
+[data-bs-theme="light"] .btn-login-tema:hover { color: #7a4510; background: rgba(74,42,31,0.1); border-color: #8c4e10; }
+
 [data-bs-theme="light"] .luxury-card {
   background: #fffdf9; border-color: rgba(74,42,31,0.15);
   box-shadow: 0 2px 20px rgba(74,42,31,0.09), 0 1px 4px rgba(74,42,31,0.06);
@@ -590,17 +611,23 @@ input[type="time"].input-luxury {
    ═══════════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
-  .main-content { padding: 1rem !important; }
+  .main-content { padding: 1rem 0.5rem !important; }
+
+  /* FIX: Evita el desborde horizontal de Bootstrap removiendo los márgenes negativos de las filas en móviles */
+  .row { margin-left: 0; margin-right: 0; }
+  .row > [class*="col-"] { padding-left: 0.5rem; padding-right: 0.5rem; }
 
   #view-ventas .row > [class*="col-lg"],
-  #storefront-view .row > [class*="col-lg"] { width: 100% !important; }
+  #storefront-view .row > [class*="col-lg"],
+  #view-dashboard .row > [class*="col-lg"] { width: 100% !important; margin-bottom: 1rem; }
 
   .catalogo-grid { max-height: 240px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
   .carrito-list  { max-height: 180px; }
 
   #view-historial > .d-flex,
   #view-clientes > .d-flex,
-  #view-usuarios > .d-flex { flex-direction: column !important; align-items: flex-start !important; gap: 0.75rem !important; }
+  #view-usuarios > .d-flex,
+  #view-monedas > .d-flex { flex-direction: column !important; align-items: flex-start !important; gap: 0.75rem !important; }
 
   .stat-card { padding: 0.9rem 1rem; }
 }
@@ -618,12 +645,13 @@ input[type="time"].input-luxury {
 
 @media (max-width: 480px) {
   .main-content { padding: 0.75rem !important; }
-  .login-card { padding: 2rem 1.25rem; margin: 0.75rem; border-radius: 20px; }
+  /* FIX: Se ajustó el margen y ancho de la tarjeta para evitar que colapse */
+  .login-card { padding: 2rem 1.25rem; margin: 1rem auto; border-radius: 20px; }
   .detalle-grid { grid-template-columns: 1fr; gap: 0.5rem; }
 }
 
 @media (max-width: 576px) {
-  .modal-dialog { margin: 0.75rem; max-width: calc(100vw - 1.5rem); }
+  .modal-dialog { margin: 0.5rem; max-width: calc(100vw - 1rem); }
   .luxury-modal { border-radius: 20px; }
   .luxury-modal .modal-header { padding: 1.25rem 1.25rem 0.75rem; }
   .luxury-modal .modal-body   { padding: 0.75rem 1.25rem 1rem; max-height: 72vh; overflow-y: auto; }
