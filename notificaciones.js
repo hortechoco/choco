@@ -21,7 +21,7 @@ async function enviarNtfy(titulo, mensaje, prioridad = 'default') {
 async function notificarNuevaVenta(venta, items, perfil = null) {
   const resumen = items.map(i => `${i.cantidad}x ${i.nombre}`).join(', ');
   const tipo    = venta.tipo_entrega === 'domicilio' ? 'Domicilio' : 'Recogida';
-  const titulo  = `[Horte] Nueva venta — $${Number(venta.total).toFixed(2)}`;
+  const titulo  = `Nueva venta ${Number(venta.total).toFixed(2)}`;
 
   const lineas = [
     `Tipo: ${tipo} | Pago: ${venta.metodo_pago}`,
@@ -54,15 +54,15 @@ async function notificarNuevaVenta(venta, items, perfil = null) {
 async function notificarCambioPedidoCliente(venta, tipo, perfil = null) {
   const cfg = {
     cancelado_cliente: {
-      titulo: `[Horte] ❌ Pedido #${venta.id} cancelado por cliente`,
+      titulo: `Pedido ${venta.id} cancelado por cliente`,
       prioridad: 'high', tags: 'x,chocolate',
     },
     aprobado_cliente: {
-      titulo: `[Horte] ✅ Pedido #${venta.id} — cargos aprobados`,
+      titulo: `Pedido ${venta.id} — cargos aprobados`,
       prioridad: 'default', tags: 'white_check_mark,chocolate',
     },
     confirmado_entrega: {
-      titulo: `[Horte] 📦 Pedido #${venta.id} — entrega confirmada por cliente`,
+      titulo: `Pedido ${venta.id} — entrega confirmada por cliente`,
       prioridad: 'low', tags: 'package,chocolate',
     },
   };
