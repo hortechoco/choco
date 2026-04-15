@@ -29,9 +29,23 @@
         <button id="btn-logout-storefront" class="btn-icon" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
       </div>
     </div>
+    <div class="navbar-nav-row">
+      <div class="navbar-nav-scroll">
+        <a href="#" class="nav-pill active" data-view="catalogo">
+          <i class="bi bi-grid"></i><span>Catálogo</span>
+        </a>
+        <a href="#" class="nav-pill" data-view="mispedidos" style="position:relative">
+          <i class="bi bi-bag-check"></i><span>Mis Pedidos</span>
+          <span id="mispedidos-badge" style="display:none;position:absolute;top:2px;right:2px;
+            background:var(--bronze);color:#fff;font-size:.55rem;font-weight:600;
+            min-width:16px;height:16px;border-radius:8px;line-height:16px;
+            text-align:center;padding:0 4px"></span>
+        </a>
+      </div>
+    </div>
   </nav>
 
-  <!-- STOREFRONT MAIN -->
+  <!-- CATÁLOGO -->
   <div id="storefront-view" class="container py-4" style="max-width:1000px">
     <div class="view-header mb-4">
       <h1 class="view-title">Catálogo</h1>
@@ -130,6 +144,17 @@
     </div>
   </div>
 
+  <!-- MIS PEDIDOS -->
+  <div id="mispedidos-view" class="container py-4 d-none" style="max-width:700px">
+    <div class="view-header mb-4">
+      <h1 class="view-title">Mis Pedidos</h1>
+      <p class="view-subtitle">Seguimiento y gestión de tus compras</p>
+    </div>
+    <div id="mispedidos-lista">
+      <div class="empty-state text-center py-5">Cargando...</div>
+    </div>
+  </div>
+
   <div id="global-loader" class="global-loader d-none"><div class="loader-ring"></div></div>
   <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999"></div>
 
@@ -140,6 +165,7 @@
   <script src="ui.js"></script>
   <script src="auth.js"></script>
   <script src="storefront.js"></script>
+  <script src="mispedidos.js"></script>
   <script>
     (async function () {
       const ok = await Auth.iniciar();
@@ -150,7 +176,45 @@
         Auth.signOut(); window.location.href = 'index.html';
       });
 
+      // ── Navegación Catálogo / Mis Pedidos ──────────
+      async function _navegarVista(view) {
+        document.querySelectorAll('.nav-pill[data-view]').forEach(p =>
+          p.classList.toggle('active', p.dataset.view === view));
+        document.getElementById('storefront-view').classList.toggle('d-none', view !== 'catalogo');
+        document.getElementById('mispedidos-view').classList.toggle('d-none', view !== 'mispedidos');
+
+        if (view === 'mispedidos') {
+          await MisPedidos.cargar();
+          _actualizarBadge();
+        }
+      }
+
+      function _actualizarBadge() {
+        const badge = document.getElementById('mispedidos-badge');
+        const n = MisPedidos.contarAccionesPendientes();
+        badge.textContent  = n || '';
+        badge.style.display = n ? 'inline' : 'none';
+      }
+
+      document.querySelectorAll('.nav-pill[data-view]').forEach(pill => {
+        pill.addEventListener('click', e => {
+          e.preventDefault();
+          _navegarVista(pill.dataset.view);
+        });
+      });
+
+      // ── Iniciar storefront ─────────────────────────
       await Storefront.iniciar();
+
+      // ── Pre-cargar badge de pedidos pendientes ─────
+      try {
+        const pedidosPrevios = await fetchMisPedidos(Auth.perfil.id);
+        const n = MisPedidos.contarAccionesPendientes(pedidosPrevios);
+        const badge = document.getElementById('mispedidos-badge');
+        badge.textContent   = n || '';
+        badge.style.display = n ? 'inline' : 'none';
+      } catch (_) { /* silencioso */ }
+
     })();
   </script>
 </body>

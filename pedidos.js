@@ -1,5 +1,5 @@
 // pedidos.js — gestión de pedidos pendientes de clientes
-// Depende de: supabase.js, ui.js, auth.js
+// Depende de: supabase.js, ui.js, auth.js, notificaciones.js
 
 const Pedidos = {
   _lista: [],
@@ -21,7 +21,6 @@ const Pedidos = {
     const tbody = document.getElementById('pedidos-tbody');
     if (!tbody) return;
 
-    // Badge contador en nav
     const badge = document.getElementById('pedidos-count-badge');
     if (badge) {
       badge.textContent  = this._lista.length || '';
@@ -34,9 +33,23 @@ const Pedidos = {
     }
 
     tbody.innerHTML = this._lista.map(v => {
-      const cliente = v.perfiles;
-      const fecha   = new Date(v.fecha).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' });
+      const cliente   = v.perfiles;
+      const fecha     = new Date(v.fecha).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' });
       const tipoBadge = `<span class="badge-tipo ${v.tipo_entrega === 'domicilio' ? 'badge-domicilio' : 'badge-recogida'}">${v.tipo_entrega}</span>`;
+
+      // Indicadores de aprobación / confirmación
+      let estadoBadge = `<span class="badge-estado badge-estado-${v.estado}">${v.estado}</span>`;
+      if (v.aprobacion_cliente === 'pendiente') {
+        estadoBadge += ` <span class="badge-aprobacion" title="El cliente aún no aprobó los cargos">
+          <i class="bi bi-clock"></i> Aprob.
+        </span>`;
+      }
+      if (v.cliente_confirmo_entrega) {
+        estadoBadge += ` <span class="badge-confirmado" title="Cliente confirmó recepción">
+          <i class="bi bi-check2"></i>
+        </span>`;
+      }
+
       return `
         <tr>
           <td style="font-family:'Lora',serif;color:var(--bronze)">#${v.id}</td>
@@ -45,7 +58,7 @@ const Pedidos = {
           <td>${tipoBadge}</td>
           <td><span class="badge-pago">${v.metodo_pago}</span></td>
           <td class="text-gold" style="font-weight:500">$${Number(v.total).toFixed(2)}</td>
-          <td><span class="badge-estado badge-estado-${v.estado}">${v.estado}</span></td>
+          <td>${estadoBadge}</td>
           <td class="text-end">
             <button class="btn btn-sm btn-luxury" data-action="gestionar" data-id="${v.id}">
               <i class="bi bi-pencil-square me-1"></i>Gestionar
@@ -66,7 +79,6 @@ const Pedidos = {
     this._ventaActual = venta;
     const cliente = venta.perfiles;
 
-    // Info de sólo lectura
     document.getElementById('pedido-id-label').textContent      = `#${venta.id}`;
     document.getElementById('pedido-fecha-label').textContent   = new Date(venta.fecha).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' });
     document.getElementById('pedido-cliente-label').textContent = cliente?.nombre_completo ?? 'Sin cliente';
@@ -77,16 +89,48 @@ const Pedidos = {
     document.getElementById('pedido-pago-label').innerHTML      = `<span class="badge-pago">${venta.metodo_pago}</span>`;
     document.getElementById('pedido-notas-label').textContent   = venta.notas || '—';
 
+    // ── Estado aprobación / confirmación ───────────
+    const aprobEl = document.getElementById('pedido-aprobacion-row');
+    if (aprobEl) {
+      if (!venta.cliente_id) {
+        aprobEl.classList.add('d-none');
+      } else {
+        aprobEl.classList.remove('d-none');
+        const aprobSpan = document.getElementById('pedido-aprobacion-label');
+        if (aprobSpan) {
+          if (!venta.aprobacion_cliente) {
+            aprobSpan.innerHTML = `<span style="color:var(--text-dim);font-size:.78rem">Sin cargos — no requerida</span>`;
+          } else if (venta.aprobacion_cliente === 'pendiente') {
+            aprobSpan.innerHTML = `<span class="badge-aprobacion"><i class="bi bi-clock me-1"></i>Pendiente de cliente</span>`;
+          } else {
+            aprobSpan.innerHTML = `<span class="badge-confirmado"><i class="bi bi-check2 me-1"></i>Aprobado por cliente</span>`;
+          }
+        }
+      }
+    }
+    const confirmaEl = document.getElementById('pedido-confirmacion-row');
+    if (confirmaEl) {
+      if (!venta.cliente_id) {
+        confirmaEl.classList.add('d-none');
+      } else {
+        confirmaEl.classList.remove('d-none');
+        const confirmaSpan = document.getElementById('pedido-confirmacion-label');
+        if (confirmaSpan) {
+          confirmaSpan.innerHTML = venta.cliente_confirmo_entrega
+            ? `<span class="badge-confirmado"><i class="bi bi-bag-check me-1"></i>Entrega confirmada por cliente</span>`
+            : `<span style="color:var(--text-dim);font-size:.78rem">Aún no confirmado</span>`;
+        }
+      }
+    }
+
     // Campos editables
     document.getElementById('pedido-estado').value                = venta.estado;
     document.getElementById('pedido-cargo-domicilio').value       = venta.cargo_domicilio ?? 0;
     document.getElementById('pedido-cargo-transferencia').value   = venta.cargo_transferencia ?? 0;
 
-    // Mostrar/ocultar filas según tipo
     document.getElementById('pedido-domicilio-row').classList.toggle('d-none', venta.tipo_entrega !== 'domicilio');
     document.getElementById('pedido-transf-row').classList.toggle('d-none', venta.metodo_pago !== 'transferencia');
 
-    // Cargar items
     const itemsEl = document.getElementById('pedido-items-body');
     itemsEl.innerHTML = `<tr><td colspan="4" class="empty-state text-center py-2">Cargando...</td></tr>`;
 
@@ -149,12 +193,18 @@ const Pedidos = {
     const subtotal = items.reduce((s, i) => s + Number(i.subtotal), 0);
     const total    = subtotal + cargo_domicilio + cargo_transferencia;
 
+    // Si el vendedor añade cargos y el cliente aún no los aprobó, solicitar aprobación
+    const tieneNuevosCargos = cargo_domicilio > 0 || cargo_transferencia > 0;
+    const yaAprobado = venta.aprobacion_cliente === 'aprobado';
+    const necesitaAprobacion = tieneNuevosCargos && venta.cliente_id != null && !yaAprobado;
+
     const payload = {
       estado,
       cargo_domicilio,
       cargo_transferencia,
       total,
       vendedor_id: Auth.perfil?.id ?? null,
+      ...(necesitaAprobacion ? { aprobacion_cliente: 'pendiente' } : {}),
     };
 
     const spinner = document.getElementById('btn-guardar-pedido-spinner');
@@ -163,8 +213,17 @@ const Pedidos = {
     label.textContent = 'Guardando...';
 
     try {
-      await updateVenta(venta.id, payload);
-      UI.mostrarToast(`Pedido #${venta.id} actualizado`, 'success');
+      const ventaActualizada = await updateVenta(venta.id, payload);
+
+      // Notificar por ntfy si hubo cambios relevantes
+      await notificarModificacionPedido(venta, ventaActualizada, Auth.perfil);
+
+      UI.mostrarToast(
+        necesitaAprobacion
+          ? `Pedido #${venta.id} actualizado — el cliente debe aprobar los cargos`
+          : `Pedido #${venta.id} actualizado`,
+        'success'
+      );
       this._modal?.hide();
       await this.cargar();
     } catch (err) {
