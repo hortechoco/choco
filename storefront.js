@@ -148,8 +148,9 @@ const Storefront = {
     // El cliente solo ve el subtotal de los productos seleccionados.
     const total = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
 
-    document.getElementById('storefront-subtotal').textContent = `$${total.toFixed(2)}`;
-    document.getElementById('storefront-total').textContent   = `$${total.toFixed(2)}`;
+    const subtotalEl = document.getElementById('storefront-subtotal');
+    if (subtotalEl) subtotalEl.textContent = `$${total.toFixed(2)}`;
+    document.getElementById('storefront-total').textContent = `$${total.toFixed(2)}`;
 
     // Equivalente moneda
     const monedaSel = document.getElementById('storefront-moneda');
@@ -289,7 +290,7 @@ const Storefront = {
     document.querySelectorAll('#storefront-view .btn-entrega[data-tipo]').forEach(b => {
       b.classList.toggle('active', b.dataset.tipo === 'recogida');
     });
-    document.getElementById('storefront-cargo-row').classList.add('d-none');
+    document.getElementById('storefront-cargo-row')?.classList.add('d-none');
     document.getElementById('storefront-direccion-row').classList.add('d-none');
 
     // Reset dirección

@@ -6,9 +6,10 @@ async function enviarNtfy(titulo, mensaje, prioridad = 'default') {
     await fetch(`${NTFY_SERVER}/${NTFY_TOPIC}`, {
       method: 'POST',
       headers: {
-        'Title':    titulo,
+        'Title':    encodeURIComponent(titulo),
         'Priority': prioridad,
         'Tags':     'chocolate,money_with_wings',
+        'Content-Type': 'text/plain; charset=utf-8',
       },
       body: mensaje,
     });
@@ -82,7 +83,12 @@ async function notificarCambioPedidoCliente(venta, tipo, perfil = null) {
   try {
     await fetch(`${NTFY_SERVER}/${NTFY_TOPIC}`, {
       method: 'POST',
-      headers: { 'Title': c.titulo, 'Priority': c.prioridad, 'Tags': c.tags },
+      headers: {
+        'Title':    encodeURIComponent(c.titulo),
+        'Priority': c.prioridad,
+        'Tags':     c.tags,
+        'Content-Type': 'text/plain; charset=utf-8',
+      },
       body: lineas.join('\n'),
     });
   } catch (err) {
