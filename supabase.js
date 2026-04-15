@@ -184,6 +184,24 @@ async function fetchVentasDeCliente(clienteId) {
   return data;
 }
 
+// ── PEDIDOS DE CLIENTE ─────────────────────────────
+async function fetchMisPedidos(clienteId) {
+  const { data, error } = await db
+    .from('ventas')
+    .select('*, detalle_ventas(cantidad, precio_unitario, subtotal, productos(nombre))')
+    .eq('cliente_id', clienteId)
+    .order('fecha', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+async function updateVentaCliente(id, payload) {
+  const { data, error } = await db
+    .from('ventas').update(payload).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
 // ── HELPERS ────────────────────────────────────────
 function _generarPin() {
   return String(Math.floor(1000 + Math.random() * 9000));
