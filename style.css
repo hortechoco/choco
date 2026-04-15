@@ -597,3 +597,55 @@ body { font-family: 'Poppins', sans-serif; font-weight: 300; display: flex; flex
 @media (max-width: 768px) {
   .table-luxury { min-width: 560px; }
 }
+
+/* ── PEDIDO CARDS (vista cliente) ─────────────────── */
+.pedido-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; margin-bottom: .75rem; overflow: hidden;
+  transition: border-color .2s;
+}
+.pedido-card:hover { border-color: rgba(181,113,42,.38); }
+.pedido-card-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: .85rem 1rem .5rem; flex-wrap: wrap; gap: .5rem;
+}
+.pedido-num  { font-family: 'Lora', serif; color: var(--bronze); font-size: .95rem; font-weight: 600; }
+.pedido-fecha { font-size: .72rem; color: var(--text-dim); }
+.pedido-card-body { padding: 0 1rem .85rem; }
+.pedido-resumen { font-size: .82rem; color: var(--text-body); }
+.pedido-desglose { font-size: .72rem; color: var(--text-dim); display: flex; gap: .75rem; flex-wrap: wrap; }
+.pedido-total { font-size: .95rem; font-weight: 500; }
+.pedido-notas { font-size: .74rem; color: var(--text-dim); font-style: italic; }
+.pedido-card-footer {
+  display: flex; gap: .5rem; flex-wrap: wrap;
+  padding: .65rem 1rem; border-top: 1px solid var(--border);
+  background: rgba(181,113,42,.03);
+}
+.aprobacion-banner {
+  margin: 0 1rem .75rem;
+  background: rgba(212,166,85,.1); border: 1px solid rgba(212,166,85,.28);
+  border-radius: 8px; padding: .6rem .85rem;
+  font-size: .78rem; color: var(--gold);
+}
+.badge-aprobacion {
+  font-size: .6rem; letter-spacing: .08em;
+  background: rgba(212,166,85,.12); color: var(--gold);
+  border: 1px solid rgba(212,166,85,.28);
+  padding: .22rem .55rem; border-radius: 100px;
+  display: inline-flex; align-items: center;
+}
+.badge-confirmado {
+  font-size: .6rem; letter-spacing: .08em;
+  padding: .22rem .55rem; border-radius: 100px;
+  display: inline-flex; align-items: center;
+}
+[data-bs-theme="dark"]  .badge-confirmado { background: rgba(45,140,100,.15); color: #5ec990; border: 1px solid rgba(45,140,100,.3); }
+[data-bs-theme="light"] .badge-confirmado { background: rgba(30,110,70,.12); color: #1e6e46; border: 1px solid rgba(30,110,70,.2); }
+.btn-danger-luxury {
+  background: transparent; border: 1px solid rgba(224,112,112,.35);
+  color: #e07070; font-family: 'Poppins', sans-serif; font-size: .75rem;
+  border-radius: 6px; padding: .38rem .85rem; cursor: pointer; transition: background .18s;
+}
+.btn-danger-luxury:hover { background: rgba(224,112,112,.1); }
+[data-bs-theme="light"] .btn-danger-luxury { color: #c05050; border-color: rgba(192,80,80,.35); }
