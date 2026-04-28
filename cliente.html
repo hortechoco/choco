@@ -498,6 +498,7 @@
       flex: 0 0 auto;
       min-height: 100px;
       max-height: 220px;
+      overflow-x: hidden;
       overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: rgba(181,113,42,0.2) transparent;
@@ -519,16 +520,18 @@
     .lux-ci {
       display: flex;
       align-items: center;
-      gap: 0.7rem;
+      gap: 0.5rem;
       padding: 0.7rem 0;
       border-bottom: 1px solid rgba(181,113,42,0.07);
+      min-width: 0;       /* clave: evita que el flex item estire al padre */
+      overflow: hidden;
     }
     .lux-ci:last-child { border-bottom: none; }
 
     .lux-ci__name {
-      flex: 1;
+      flex: 1 1 0;        /* crece pero puede encogerse hasta 0 */
       font-family: 'Cormorant Garamond', serif;
-      font-size: 0.92rem;
+      font-size: 0.88rem;
       color: var(--mist);
       min-width: 0;
       overflow: hidden;
@@ -540,6 +543,7 @@
       display: flex;
       align-items: center;
       gap: 0.3rem;
+      flex-shrink: 0;     /* los controles no se encogen */
     }
 
     .lux-ci__btn {
@@ -568,9 +572,10 @@
 
     .lux-ci__price {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       color: var(--gold);
-      min-width: 48px;
+      white-space: nowrap; /* precio siempre en una línea */
+      flex-shrink: 0;
       text-align: right;
     }
 
@@ -581,6 +586,7 @@
       cursor: pointer;
       font-size: 0.75rem;
       padding: 0;
+      flex-shrink: 0;
       transition: color 0.15s;
     }
     .lux-ci__remove:hover { color: #c05050; }
