@@ -298,8 +298,10 @@
 
     .catalog-head {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
       margin-bottom: 2.5rem;
       padding-bottom: 1.5rem;
       border-bottom: 1px solid var(--line);
@@ -311,6 +313,8 @@
       font-weight: 300;
       letter-spacing: -0.01em;
       color: var(--cream);
+      flex-shrink: 0;
+      min-width: 0;
     }
 
     .lux-search {
@@ -325,6 +329,8 @@
       padding: 0.5rem 1rem;
       outline: none;
       width: 180px;
+      min-width: 0;
+      flex-shrink: 1;
       transition: border-color 0.25s, width 0.3s;
     }
     .lux-search::placeholder { color: rgba(242,236,228,0.22); }
@@ -396,6 +402,10 @@
       color: var(--cream);
       line-height: 1.25;
       margin-bottom: 0.35rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .prod-card__desc {
@@ -404,6 +414,10 @@
       line-height: 1.65;
       font-weight: 200;
       margin-bottom: 0.75rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .prod-card__footer {
@@ -1110,11 +1124,17 @@
     }
 
     @media (max-width: 600px) {
-      .lux-nav__top { padding: 0 1rem; }
+      .lux-nav__top {
+        padding: 0 1rem;
+        gap: 0.4rem;
+        flex-wrap: nowrap;
+        overflow: hidden;
+      }
       .lux-nav__tabs { padding: 0 0.75rem; gap: 0; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
       .lux-nav__tabs::-webkit-scrollbar { display: none; }
       .lux-tab + .lux-tab { margin-left: 1.25rem; }
       .lux-tab { font-size: 0.6rem; padding-bottom: 0.7rem; padding-top: 0.7rem; }
+      /* Product grid: 2 columnas fijas en móvil */
       .product-grid { grid-template-columns: repeat(2, 1fr); }
       .lux-user-badge { display: none; }
       .lux-brand__sub { display: none; }
@@ -1122,6 +1142,15 @@
       .order-panel { padding: 1.5rem 1rem 1rem; }
       .mispedidos-wrap { padding: 1.5rem 1rem; }
       .modal-dialog { margin: 0.5rem; max-width: calc(100vw - 1rem); }
+      /* Catálogo header: buscador ocupa todo el ancho al hacer wrap */
+      .catalog-head { gap: 0.6rem; margin-bottom: 1.5rem; }
+      .lux-search { width: 100%; }
+      .lux-search:focus { width: 100%; }
+    }
+
+    @media (max-width: 420px) {
+      .product-grid { grid-template-columns: 1fr; }
+      .prod-card__img, .prod-card__placeholder { aspect-ratio: 16/9; }
     }
 
     /* ── LIGHT THEME ─────────────────────────────── */
