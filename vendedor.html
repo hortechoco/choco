@@ -8,10 +8,96 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@200;300;400;500&family=Lora:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <script src="settings.js"></script>
   <script src="theme.js"></script>
+  <style>
+    /* ── Tipografía luxury ──────────────────────── */
+    body { font-family: 'Jost', sans-serif; font-weight: 300; }
+
+    .view-title, .card-section-title, .modal-title.font-lora,
+    .brand-name, .stat-value, .text-gold[style*="font-family"] {
+      font-family: 'Cormorant Garamond', serif !important;
+    }
+    .view-title   { font-weight: 300; letter-spacing: -.01em; }
+    .stat-value   { font-family: 'Cormorant Garamond', serif !important; font-weight: 400; }
+    .brand-name   { font-family: 'Cormorant Garamond', serif !important; font-weight: 300; letter-spacing: .18em; font-size: 1.35rem; }
+
+    /* ── Nav pills → estilo lux-tab (subrayado) ─ */
+    .nav-pill {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.63rem;
+      letter-spacing: 0.22em;
+      font-weight: 300;
+      border-radius: 0;
+      position: relative;
+      padding: 0.78rem 1rem;
+      transition: color 0.2s;
+    }
+    .nav-pill::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: var(--gold);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.28s ease;
+    }
+    .nav-pill.active { background: transparent !important; color: var(--gold) !important; }
+    .nav-pill.active::after { transform: scaleX(1); }
+    .nav-pill:hover:not(.active) { background: transparent !important; }
+
+    /* Badge pedidos sobre nav-pill */
+    #pedidos-count-badge { border-radius: 8px; }
+
+    /* ── Inputs: Jost ───────────────────────────── */
+    .input-luxury, .form-select.input-luxury {
+      font-family: 'Jost', sans-serif;
+      font-weight: 300;
+    }
+
+    /* ── Botones: Jost ──────────────────────────── */
+    .btn-luxury, .btn-luxury-outline, .btn-danger-luxury {
+      font-family: 'Jost', sans-serif;
+    }
+
+    /* ── Tabla: número de venta con CG ─────────── */
+    .table-luxury tbody td [style*="font-family:'Lora'"],
+    [style*="font-family:'Lora',serif"] {
+      font-family: 'Cormorant Garamond', serif !important;
+      font-size: 1rem;
+    }
+
+    /* ── Modal: título con CG ───────────────────── */
+    .luxury-modal .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: 1.25rem;
+      letter-spacing: -.01em;
+    }
+
+    /* ── Pedido info flat (sin tarjeta interna) ── */
+    .pedido-info-section {
+      padding-bottom: 1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .pedido-info-col + .pedido-info-col {
+      border-left: 1px solid var(--border);
+      padding-left: 1.2rem;
+    }
+    @media (max-width: 768px) {
+      .pedido-info-col + .pedido-info-col {
+        border-left: none;
+        border-top: 1px solid var(--border);
+        padding-left: 0;
+        padding-top: 0.75rem;
+        margin-top: 0.25rem;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -36,6 +122,7 @@
           <i class="bi bi-inbox"></i><span>Pedidos</span>
           <span id="pedidos-count-badge" style="display:none;position:absolute;top:2px;right:2px;background:var(--bronze);color:#fff;font-size:.55rem;font-weight:600;min-width:16px;height:16px;border-radius:8px;line-height:16px;text-align:center;padding:0 4px"></span>
         </a>
+        <a href="#" class="nav-pill" data-module="ventas"><i class="bi bi-bag-plus"></i><span>Nueva venta</span></a>
         <a href="#" class="nav-pill" data-module="historial"><i class="bi bi-clock-history"></i><span>Historial</span></a>
         <a href="#" class="nav-pill" data-module="clientes"><i class="bi bi-people"></i><span>Clientes</span></a>
       </div>
@@ -360,42 +447,35 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body pt-3">
-          <div class="row g-3 mb-3">
-            <!-- Info cliente -->
-            <div class="col-md-6">
-              <div class="luxury-card p-3" style="border-radius:10px">
-                <div class="label-luxury mb-2"><i class="bi bi-person me-1"></i>Cliente</div>
-                <div style="font-size:.9rem;font-weight:400" id="pedido-cliente-label">—</div>
-                <div style="font-size:.78rem;color:var(--text-dim);margin-top:.25rem">
-                  <i class="bi bi-telephone me-1"></i><span id="pedido-tel-label">—</span>
-                </div>
-                <div style="font-size:.78rem;color:var(--text-dim);margin-top:.15rem">
-                  <i class="bi bi-geo-alt me-1"></i><span id="pedido-dir-label">—</span>
-                </div>
+          <!-- Info cliente + pedido (flat, sin tarjetas internas) -->
+          <div class="row g-3 pedido-info-section">
+            <div class="col-md-6 pedido-info-col">
+              <div class="label-luxury mb-2"><i class="bi bi-person me-1"></i>Cliente</div>
+              <div style="font-size:.9rem;font-weight:400" id="pedido-cliente-label">—</div>
+              <div style="font-size:.78rem;color:var(--text-dim);margin-top:.3rem">
+                <i class="bi bi-telephone me-1"></i><span id="pedido-tel-label">—</span>
+              </div>
+              <div style="font-size:.78rem;color:var(--text-dim);margin-top:.2rem">
+                <i class="bi bi-geo-alt me-1"></i><span id="pedido-dir-label">—</span>
               </div>
             </div>
-            <!-- Info pedido -->
-            <div class="col-md-6">
-              <div class="luxury-card p-3" style="border-radius:10px">
-                <div class="detalle-grid" style="grid-template-columns:1fr 1fr;gap:.5rem">
-                  <div class="detalle-field"><label>Fecha pedido</label><span id="pedido-fecha-label">—</span></div>
-                  <div class="detalle-field"><label>Tipo</label><span id="pedido-tipo-label">—</span></div>
-                  <div class="detalle-field"><label>Pago</label><span id="pedido-pago-label">—</span></div>
-                  <div class="detalle-field"><label>Notas</label><span id="pedido-notas-label" style="font-style:italic;font-size:.78rem">—</span></div>
+            <div class="col-md-6 pedido-info-col">
+              <div class="detalle-grid" style="grid-template-columns:1fr 1fr;gap:.5rem">
+                <div class="detalle-field"><label>Fecha pedido</label><span id="pedido-fecha-label">—</span></div>
+                <div class="detalle-field"><label>Tipo</label><span id="pedido-tipo-label">—</span></div>
+                <div class="detalle-field"><label>Pago</label><span id="pedido-pago-label">—</span></div>
+                <div class="detalle-field"><label>Notas</label><span id="pedido-notas-label" style="font-style:italic;font-size:.78rem">—</span></div>
+              </div>
+              <div id="pedido-fecha-entrega-row" class="d-none mt-2">
+                <div class="detalle-field">
+                  <label><i class="bi bi-calendar-event me-1"></i>Entrega programada</label>
+                  <span id="pedido-fecha-entrega-label" style="color:var(--gold)">—</span>
                 </div>
-                <!-- Fecha / hora de entrega programada -->
-                <div id="pedido-fecha-entrega-row" class="d-none mt-2">
-                  <div class="detalle-field">
-                    <label><i class="bi bi-calendar-event me-1"></i>Entrega programada</label>
-                    <span id="pedido-fecha-entrega-label" style="color:var(--gold)">—</span>
-                  </div>
-                </div>
-                <!-- Dirección del pedido -->
-                <div id="pedido-dir-entrega-row" class="d-none mt-1">
-                  <div class="detalle-field">
-                    <label><i class="bi bi-geo-alt me-1"></i>Dirección entrega</label>
-                    <span id="pedido-dir-entrega-label" style="font-size:.8rem">—</span>
-                  </div>
+              </div>
+              <div id="pedido-dir-entrega-row" class="d-none mt-1">
+                <div class="detalle-field">
+                  <label><i class="bi bi-geo-alt me-1"></i>Dirección entrega</label>
+                  <span id="pedido-dir-entrega-label" style="font-size:.8rem">—</span>
                 </div>
               </div>
             </div>
