@@ -1111,7 +1111,13 @@
 
     /* Catálogo horizontal — portrait ≤ 900px */
     @media (max-width: 900px) {
-      .storefront-layout { grid-template-columns: 1fr; }
+      .storefront-layout {
+        grid-template-columns: 1fr;
+        overflow-x: hidden;   /* evita que el grid con márgenes negativos expanda el layout */
+      }
+      .catalog-panel {
+        overflow-x: hidden;   /* contiene el product-grid sin arrastrar elementos vecinos */
+      }
       .order-panel {
         position: static;
         height: auto;
