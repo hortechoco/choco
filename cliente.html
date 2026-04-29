@@ -1123,53 +1123,35 @@
       .order-form  { flex: none; overflow-y: visible; }
       .lux-search:focus { width: 180px; }
 
-      /* ── Catálogo: scroll horizontal ── */
-      .catalog-panel {
-        padding-left: 0;
-        padding-right: 0;
-      }
-      .catalog-head {
-        padding-left: clamp(1.2rem, 4vw, 2rem);
-        padding-right: clamp(1.2rem, 4vw, 2rem);
-      }
+      /* ── Solo el grid pasa a scroll horizontal ──
+         El catalog-head (título + buscador) no se toca.
+         Negative margin para que las tarjetas lleguen al borde
+         del panel sin quitar el padding al resto de contenido. */
       .product-grid {
-        /* Reemplazar grid por fila deslizable */
         display: flex;
         flex-wrap: nowrap;
         overflow-x: auto;
         overflow-y: hidden;
         background: transparent;
         gap: 8px;
+        /* sangra hasta los bordes del panel */
+        margin-left:  calc(-1 * clamp(1.2rem, 4vw, 2rem));
+        margin-right: calc(-1 * clamp(1.2rem, 4vw, 2rem));
         padding: 0 clamp(1.2rem, 4vw, 2rem) 0.75rem;
         scroll-snap-type: x mandatory;
         -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;           /* Firefox */
+        scrollbar-width: none;
+        /* fade derecho: solo sobre el grid, no sobre la búsqueda */
+        -webkit-mask-image: linear-gradient(to right, black calc(100% - 48px), transparent 100%);
+        mask-image:         linear-gradient(to right, black calc(100% - 48px), transparent 100%);
       }
       .product-grid::-webkit-scrollbar { display: none; }
 
-      /* Tarjeta fija: ~185px — muestra ~3.x en tablets */
+      /* Tarjeta fija — ~3.x visibles en tablets */
       .prod-card {
         flex: 0 0 185px;
         width: 185px;
         scroll-snap-align: start;
-        scroll-snap-stop: normal;
-      }
-      /* Imagen: mantener 4/3 compacto */
-      .prod-card__img,
-      .prod-card__placeholder { aspect-ratio: 4/3; }
-
-      /* Indicador de scroll (fade derecho) */
-      .catalog-panel {
-        position: relative;
-      }
-      .catalog-panel::after {
-        content: '';
-        position: absolute;
-        top: 0; right: 0; bottom: 0;
-        width: 40px;
-        background: linear-gradient(to left, var(--ink) 0%, transparent 100%);
-        pointer-events: none;
-        z-index: 2;
       }
     }
 
@@ -1188,12 +1170,12 @@
       .lux-search { width: 100%; }
       .lux-search:focus { width: 100%; }
 
-      /* Tarjeta más angosta en móvil — ~2.3 visibles en 375px */
+      /* Tarjeta ~2.3 visibles en 375px */
       .prod-card { flex: 0 0 152px; width: 152px; }
     }
 
     @media (max-width: 420px) {
-      /* Tarjeta mínima — ~2.1 visibles en 320px */
+      /* Tarjeta ~2.1 visibles en 320px */
       .prod-card { flex: 0 0 138px; width: 138px; }
     }
 
