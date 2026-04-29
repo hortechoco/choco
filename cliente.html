@@ -1222,6 +1222,168 @@
       color: rgba(26,15,9,0.4);
     }
 
+    /* ── UBICACIÓN ───────────────────────────────── */
+    .lux-location {
+      border-top: 1px solid var(--line);
+      background: var(--cacao);
+    }
+
+    .lux-location__inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      min-height: 320px;
+    }
+
+    .lux-location__info {
+      padding: clamp(2.5rem, 5vw, 4rem) clamp(1.5rem, 4vw, 3.5rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-right: 1px solid var(--line);
+    }
+
+    .lux-location__eyebrow {
+      font-size: 0.6rem;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--bronze);
+      font-weight: 300;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .lux-location__eyebrow span {
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: var(--bronze);
+      flex-shrink: 0;
+    }
+
+    .lux-location__title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+      font-weight: 300;
+      letter-spacing: -0.01em;
+      color: var(--cream);
+      margin-bottom: 1.25rem;
+      line-height: 1.1;
+    }
+
+    .lux-location__address {
+      font-style: normal;
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--mist);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      margin-bottom: 0.85rem;
+      line-height: 1.5;
+    }
+    .lux-location__address i {
+      color: var(--bronze);
+      font-size: 1.05rem;
+      margin-top: 0.1rem;
+      flex-shrink: 0;
+    }
+
+    .lux-location__hint {
+      font-size: 0.7rem;
+      color: rgba(242,236,228,0.32);
+      font-weight: 200;
+      letter-spacing: 0.04em;
+      margin: 0;
+    }
+
+    .lux-location__map {
+      position: relative;
+      overflow: hidden;
+      min-height: 280px;
+    }
+
+    .lux-location__map img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      opacity: 0.82;
+      display: block;
+      transition: opacity 0.4s, transform 0.6s;
+    }
+    .lux-location__map:hover img {
+      opacity: 0.95;
+      transform: scale(1.025);
+    }
+
+    .lux-location__map::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, var(--cacao) 0%, transparent 18%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .lux-location__map-badge {
+      position: absolute;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      z-index: 2;
+      background: rgba(14,10,7,0.82);
+      border: 1px solid rgba(181,113,42,0.35);
+      backdrop-filter: blur(8px);
+      color: var(--gold);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 400;
+      padding: 0.45rem 0.9rem;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .lux-location__inner {
+        grid-template-columns: 1fr;
+      }
+      .lux-location__info {
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+        padding: 2rem 1.5rem;
+      }
+      .lux-location__map {
+        min-height: 220px;
+      }
+      .lux-location__map::before {
+        background: linear-gradient(to bottom, var(--cacao) 0%, transparent 20%);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .lux-location__info { padding: 1.75rem 1rem; }
+      .lux-location__map  { min-height: 200px; }
+    }
+
+    /* Light theme — location */
+    [data-bs-theme="light"] .lux-location { background: #fffdf9; border-top-color: rgba(74,42,31,0.14); }
+    [data-bs-theme="light"] .lux-location__inner { }
+    [data-bs-theme="light"] .lux-location__info { border-right-color: rgba(74,42,31,0.14); border-bottom-color: rgba(74,42,31,0.14); }
+    [data-bs-theme="light"] .lux-location__eyebrow { color: #8c4e10; }
+    [data-bs-theme="light"] .lux-location__eyebrow span { background: #8c4e10; }
+    [data-bs-theme="light"] .lux-location__title { color: #1a0f09; }
+    [data-bs-theme="light"] .lux-location__address { color: #1a0f09; }
+    [data-bs-theme="light"] .lux-location__address i { color: #8c4e10; }
+    [data-bs-theme="light"] .lux-location__hint { color: rgba(26,15,9,0.4); }
+    [data-bs-theme="light"] .lux-location__map img { opacity: 0.9; }
+    [data-bs-theme="light"] .lux-location__map::before { background: linear-gradient(to right, #fffdf9 0%, transparent 18%); }
+    [data-bs-theme="light"] .lux-location__map-badge { background: rgba(255,253,249,0.9); border-color: rgba(74,42,31,0.3); color: #7a4510; }
+
     /* ── LIGHT THEME ─────────────────────────────── */
     [data-bs-theme="light"] body { background: #f0e4d4; color: #1a0f09; }
     [data-bs-theme="light"] body::before { opacity: 0.25; }
@@ -1456,7 +1618,7 @@
       <div class="catalog-panel">
         <div class="catalog-head">
           <h2 class="catalog-head__title">Productos</h2>
-          <input type="text" id="storefront-buscar" class="lux-search" placeholder="Buscar…" autocomplete="">
+          <input type="text" id="storefront-buscar" class="lux-search" placeholder="Buscar…" autocomplete="off">
         </div>
         <div id="storefront-catalogo" class="product-grid">
           <div class="empty-state" style="grid-column:1/-1">Cargando catálogo…</div>
@@ -1570,6 +1732,32 @@
       </aside>
 
     </div>
+
+    <!-- ── UBICACIÓN ─────────────────────────────── -->
+    <div class="lux-location">
+      <div class="lux-location__inner">
+        <div class="lux-location__info">
+          <p class="lux-location__eyebrow">
+            <span></span>Dónde encontrarnos
+          </p>
+          <h2 class="lux-location__title">Nuestra tienda</h2>
+          <address class="lux-location__address">
+            <i class="bi bi-geo-alt"></i>
+            Prado 222 e/ Narciso López y Cervantes
+          </address>
+          <p class="lux-location__hint">
+            <i class="bi bi-clock me-1"></i>Visítanos · también puedes pedir a domicilio desde el catálogo
+          </p>
+        </div>
+        <div class="lux-location__map">
+          <img src="mapa.jpeg" alt="Mapa de ubicación — Prado 222">
+          <div class="lux-location__map-badge">
+            <i class="bi bi-geo-alt-fill me-1"></i>Prado 222
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ── MIS PEDIDOS ────────────────────────────── -->
