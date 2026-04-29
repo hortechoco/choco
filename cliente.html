@@ -1159,6 +1159,69 @@
       .prod-card__img, .prod-card__placeholder { aspect-ratio: 16/9; }
     }
 
+    /* ── MI PERFIL ───────────────────────────────── */
+    .perfil-card {
+      background: var(--cacao);
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      padding: 1.5rem;
+      margin-bottom: 1px;
+    }
+
+    .perfil-card__title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 300;
+      color: var(--cream);
+      margin: 0 0 1.2rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .perfil-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .perfil-grid .col-full { grid-column: 1 / -1; }
+
+    .perfil-pin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .perfil-hint {
+      font-size: 0.65rem;
+      color: rgba(242,236,228,0.32);
+      font-weight: 200;
+      margin-bottom: 0.9rem;
+      letter-spacing: 0.06em;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+      .perfil-grid     { grid-template-columns: 1fr; }
+      .perfil-grid .col-full { grid-column: 1; }
+      .perfil-pin-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Light theme — perfil */
+    [data-bs-theme="light"] .perfil-card {
+      background: #fffdf9;
+      border-color: rgba(74,42,31,0.14);
+    }
+    [data-bs-theme="light"] .perfil-card__title {
+      color: #1a0f09;
+      border-bottom-color: rgba(74,42,31,0.14);
+    }
+    [data-bs-theme="light"] .perfil-hint {
+      color: rgba(26,15,9,0.4);
+    }
+
     /* ── LIGHT THEME ─────────────────────────────── */
     [data-bs-theme="light"] body { background: #f0e4d4; color: #1a0f09; }
     [data-bs-theme="light"] body::before { opacity: 0.25; }
@@ -1531,12 +1594,10 @@
       </div>
 
       <!-- Datos personales -->
-      <div style="background:var(--cacao);border:1px solid var(--line);border-radius:2px;padding:1.5rem;margin-bottom:1px">
-        <p style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:300;color:var(--cream);margin-bottom:1.2rem;padding-bottom:0.75rem;border-bottom:1px solid var(--line)">
-          Datos personales
-        </p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
-          <div style="grid-column:1/-1">
+      <div class="perfil-card">
+        <p class="perfil-card__title">Datos personales</p>
+        <div class="perfil-grid">
+          <div class="col-full">
             <label class="lux-label">Nombres y apellidos</label>
             <input type="text" id="perfil-nombre" class="lux-input" placeholder="Tu nombre completo">
           </div>
@@ -1548,23 +1609,21 @@
             <label class="lux-label">Teléfono</label>
             <input type="tel" id="perfil-tel" class="lux-input" placeholder="Ej: 70012345">
           </div>
-          <div style="grid-column:1/-1">
+          <div class="col-full">
             <label class="lux-label">Dirección particular</label>
             <input type="text" id="perfil-direccion" class="lux-input" placeholder="Calle, número, referencia">
           </div>
         </div>
-        <button id="btn-guardar-perfil" class="btn-confirm-order" style="margin-top:0.5rem">
+        <button id="btn-guardar-perfil" class="btn-confirm-order">
           <span id="btn-guardar-perfil-label"><i class="bi bi-check2 me-2"></i>Guardar datos</span>
           <span id="btn-guardar-perfil-spinner" class="spinner-border spinner-border-sm d-none"></span>
         </button>
       </div>
 
       <!-- Cambiar PIN -->
-      <div style="background:var(--cacao);border:1px solid var(--line);border-radius:2px;padding:1.5rem">
-        <p style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:300;color:var(--cream);margin-bottom:1.2rem;padding-bottom:0.75rem;border-bottom:1px solid var(--line)">
-          Cambiar PIN de acceso
-        </p>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+      <div class="perfil-card">
+        <p class="perfil-card__title">Cambiar PIN de acceso</p>
+        <div class="perfil-pin-grid">
           <div>
             <label class="lux-label">PIN actual</label>
             <input type="password" id="perfil-pin-actual" class="lux-input" maxlength="4"
@@ -1581,10 +1640,8 @@
                    inputmode="numeric" placeholder="• • • •" autocomplete="new-password">
           </div>
         </div>
-        <div style="font-size:0.65rem;color:rgba(242,236,228,0.28);font-weight:200;margin-bottom:0.9rem;letter-spacing:0.06em">
-          <i class="bi bi-info-circle me-1"></i>El PIN debe tener exactamente 4 dígitos numéricos.
-        </div>
-        <button id="btn-cambiar-pin" class="btn-confirm-order" style="margin-top:0">
+        <p class="perfil-hint"><i class="bi bi-info-circle me-1"></i>El PIN debe tener exactamente 4 dígitos numéricos.</p>
+        <button id="btn-cambiar-pin" class="btn-confirm-order">
           <span id="btn-cambiar-pin-label"><i class="bi bi-lock me-2"></i>Cambiar PIN</span>
           <span id="btn-cambiar-pin-spinner" class="spinner-border spinner-border-sm d-none"></span>
         </button>
