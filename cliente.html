@@ -1108,10 +1108,10 @@
     }
 
     /* ── RESPONSIVE ──────────────────────────────── */
+
+    /* Catálogo horizontal — portrait ≤ 900px */
     @media (max-width: 900px) {
-      .storefront-layout {
-        grid-template-columns: 1fr;
-      }
+      .storefront-layout { grid-template-columns: 1fr; }
       .order-panel {
         position: static;
         height: auto;
@@ -1119,44 +1119,82 @@
         border-right: none;
         border-top: 1px solid var(--line);
       }
-      .lux-cart {
-        max-height: 200px;
-      }
-      .order-form {
-        flex: none;
-        overflow-y: visible;
-      }
+      .lux-cart    { max-height: 200px; }
+      .order-form  { flex: none; overflow-y: visible; }
       .lux-search:focus { width: 180px; }
+
+      /* ── Catálogo: scroll horizontal ── */
+      .catalog-panel {
+        padding-left: 0;
+        padding-right: 0;
+      }
+      .catalog-head {
+        padding-left: clamp(1.2rem, 4vw, 2rem);
+        padding-right: clamp(1.2rem, 4vw, 2rem);
+      }
+      .product-grid {
+        /* Reemplazar grid por fila deslizable */
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        background: transparent;
+        gap: 8px;
+        padding: 0 clamp(1.2rem, 4vw, 2rem) 0.75rem;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;           /* Firefox */
+      }
+      .product-grid::-webkit-scrollbar { display: none; }
+
+      /* Tarjeta fija: ~185px — muestra ~3.x en tablets */
+      .prod-card {
+        flex: 0 0 185px;
+        width: 185px;
+        scroll-snap-align: start;
+        scroll-snap-stop: normal;
+      }
+      /* Imagen: mantener 4/3 compacto */
+      .prod-card__img,
+      .prod-card__placeholder { aspect-ratio: 4/3; }
+
+      /* Indicador de scroll (fade derecho) */
+      .catalog-panel {
+        position: relative;
+      }
+      .catalog-panel::after {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0;
+        width: 40px;
+        background: linear-gradient(to left, var(--ink) 0%, transparent 100%);
+        pointer-events: none;
+        z-index: 2;
+      }
     }
 
     @media (max-width: 600px) {
-      .lux-nav__top {
-        padding: 0 1rem;
-        gap: 0.4rem;
-        flex-wrap: nowrap;
-        overflow: hidden;
-      }
+      .lux-nav__top { padding: 0 1rem; gap: 0.4rem; flex-wrap: nowrap; overflow: hidden; }
       .lux-nav__tabs { padding: 0 0.75rem; gap: 0; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
       .lux-nav__tabs::-webkit-scrollbar { display: none; }
       .lux-tab + .lux-tab { margin-left: 1.25rem; }
       .lux-tab { font-size: 0.6rem; padding-bottom: 0.7rem; padding-top: 0.7rem; }
-      /* Product grid: 2 columnas fijas en móvil */
-      .product-grid { grid-template-columns: repeat(2, 1fr); }
       .lux-user-badge { display: none; }
       .lux-brand__sub { display: none; }
-      .catalog-panel { padding: 1.5rem 1rem; }
       .order-panel { padding: 1.5rem 1rem 1rem; }
       .mispedidos-wrap { padding: 1.5rem 1rem; }
       .modal-dialog { margin: 0.5rem; max-width: calc(100vw - 1rem); }
-      /* Catálogo header: buscador ocupa todo el ancho al hacer wrap */
-      .catalog-head { gap: 0.6rem; margin-bottom: 1.5rem; }
+      .catalog-head { gap: 0.6rem; margin-bottom: 1.25rem; }
       .lux-search { width: 100%; }
       .lux-search:focus { width: 100%; }
+
+      /* Tarjeta más angosta en móvil — ~2.3 visibles en 375px */
+      .prod-card { flex: 0 0 152px; width: 152px; }
     }
 
     @media (max-width: 420px) {
-      .product-grid { grid-template-columns: 1fr; }
-      .prod-card__img, .prod-card__placeholder { aspect-ratio: 16/9; }
+      /* Tarjeta mínima — ~2.1 visibles en 320px */
+      .prod-card { flex: 0 0 138px; width: 138px; }
     }
 
     /* ── MI PERFIL ───────────────────────────────── */
@@ -1383,6 +1421,11 @@
     [data-bs-theme="light"] .lux-location__map img { opacity: 0.9; }
     [data-bs-theme="light"] .lux-location__map::before { background: linear-gradient(to right, #fffdf9 0%, transparent 18%); }
     [data-bs-theme="light"] .lux-location__map-badge { background: rgba(255,253,249,0.9); border-color: rgba(74,42,31,0.3); color: #7a4510; }
+
+    /* Catalog fade — light theme override */
+    [data-bs-theme="light"] .catalog-panel::after {
+      background: linear-gradient(to left, #f0e4d4 0%, transparent 100%);
+    }
 
     /* ── LIGHT THEME ─────────────────────────────── */
     [data-bs-theme="light"] body { background: #f0e4d4; color: #1a0f09; }
