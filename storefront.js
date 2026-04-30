@@ -71,59 +71,38 @@ const Storefront = {
 
   _renderCatalogo(filtro = '') {
     const container = document.getElementById('storefront-catalogo');
-    if (!container) return;
-
     const filtrados = filtro
       ? this._productos.filter(p => p.nombre.toLowerCase().includes(filtro.toLowerCase()))
       : this._productos;
 
     if (!filtrados.length) {
-      container.innerHTML = '<div class="empty-state">No hay productos disponibles</div>';
+      container.innerHTML = `<div class="empty-state">No hay productos disponibles</div>`;
       return;
     }
 
     const { tasa, simbolo } = this._getCurrencyInfo();
 
-    // Construir HTML sin template literals anidadas para evitar errores de parse
     container.innerHTML = filtrados.map(p => {
-      const precioBase  = '$' + Number(p.precio).toFixed(2);
-      const precioEquiv = (tasa && tasa !== 1)
-        ? '<div style="font-size:.65rem;color:var(--text-dim)">' + simbolo + (Number(p.precio) / tasa).toFixed(2) + '</div>'
+      const precioBase  = `$${Number(p.precio).toFixed(2)}`;
+      const precioEquiv = tasa !== 1
+        ? `<div style="font-size:.65rem;color:var(--text-dim)">${simbolo}${(Number(p.precio) / tasa).toFixed(2)}</div>`
         : '';
-      const descHtml    = p.descripcion
-        ? '<div class="pc-desc">' + p.descripcion + '</div>'
-        : '';
-      const imagenHtml  = p.imagen_url
-        ? '<div class="pc-img-wrap">'
-            + '<img src="' + p.imagen_url + '" alt="' + p.nombre + '">'
-            + '<button class="btn-zoom-img" data-zoom-src="' + p.imagen_url + '" data-zoom-nombre="' + p.nombre + '" title="Ver imagen">'
-            + '<i class="bi bi-zoom-in"></i>'
-            + '</button>'
-            + '</div>'
-        : '<div class="pc-icon"><i class="bi bi-box-seam" style="font-size:1.2rem;color:var(--bronze)"></i></div>';
-
-      return '<div class="producto-card" data-id="' + p.id + '">'
-        + imagenHtml
-        + '<div class="pc-nombre">' + p.nombre + '</div>'
-        + descHtml
-        + '<div class="pc-precio">' + precioBase + '</div>'
-        + precioEquiv
-        + '</div>';
+      return `
+      <div class="producto-card" data-id="${p.id}">
+        ${p.imagen_url
+          ? `<img src="${p.imagen_url}" alt="${p.nombre}">`
+          : `<div class="pc-icon"><i class="bi bi-box-seam" style="font-size:1.2rem;color:var(--bronze)"></i></div>`}
+        <div class="pc-nombre">${p.nombre}</div>
+        ${p.descripcion ? `<div class="pc-desc">${p.descripcion}</div>` : ''}
+        <div class="pc-precio">${precioBase}</div>
+        ${precioEquiv}
+      </div>`;
     }).join('');
 
-    // Click en card → añadir al carrito
     container.querySelectorAll('.producto-card').forEach(card => {
       card.addEventListener('click', () => {
         const prod = filtrados.find(p => String(p.id) === String(card.dataset.id));
         if (prod) this._agregarAlCarrito(prod);
-      });
-    });
-
-    // Click en botón zoom → lightbox (sin propagar al card)
-    container.querySelectorAll('.btn-zoom-img').forEach(btn => {
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        this._mostrarLightbox(btn.dataset.zoomSrc, btn.dataset.zoomNombre);
       });
     });
   },
@@ -133,7 +112,8 @@ const Storefront = {
     if (!lb) {
       lb = document.createElement('div');
       lb.id = 'storefront-lightbox';
-      lb.innerHTML = '<div class="lb-backdrop"></div>'
+      lb.innerHTML =
+        '<div class="lb-backdrop"></div>'
         + '<div class="lb-content">'
         + '<button class="lb-close" title="Cerrar"><i class="bi bi-x-lg"></i></button>'
         + '<img class="lb-img" src="" alt="">'
@@ -379,4 +359,3 @@ const Storefront = {
     this._renderCarrito();
   },
 };
-
