@@ -23,7 +23,6 @@ const Storefront = {
       const dir = Auth.perfil?.direccion;
       dirLabel.textContent = dir || 'Sin dirección guardada';
       if (!dir) {
-        // Si no tiene dirección guardada, mostrar automáticamente campo libre
         document.getElementById('btn-dir-otra')?.classList.add('active');
         document.getElementById('btn-dir-guardada')?.classList.remove('active');
         document.getElementById('storefront-dir-custom')?.classList.remove('d-none');
@@ -90,7 +89,12 @@ const Storefront = {
       return `
       <div class="producto-card" data-id="${p.id}">
         ${p.imagen_url
-          ? `<img src="${p.imagen_url}" alt="${p.nombre}">`
+          ? `<div class="pc-img-wrap">
+               <img src="${p.imagen_url}" alt="${p.nombre}">
+               <button class="btn-zoom-img" data-zoom-src="${p.imagen_url}" data-zoom-nombre="${p.nombre}" title="Ver imagen">
+                 <i class="bi bi-zoom-in"></i>
+               </button>
+             </div>`
           : `<div class="pc-icon"><i class="bi bi-box-seam" style="font-size:1.2rem;color:var(--bronze)"></i></div>`}
         <div class="pc-nombre">${p.nombre}</div>
         ${p.descripcion ? `<div class="pc-desc">${p.descripcion}</div>` : ''}
@@ -99,12 +103,47 @@ const Storefront = {
       </div>`;
     }).join('');
 
+    // Click en card → añadir al carrito
     container.querySelectorAll('.producto-card').forEach(card => {
       card.addEventListener('click', () => {
         const prod = filtrados.find(p => String(p.id) === String(card.dataset.id));
         if (prod) this._agregarAlCarrito(prod);
       });
     });
+
+    // Click en botón zoom → lightbox (sin propagar al card)
+    container.querySelectorAll('.btn-zoom-img').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        this._mostrarLightbox(btn.dataset.zoomSrc, btn.dataset.zoomNombre);
+      });
+    });
+  },
+
+  _mostrarLightbox(src, nombre) {
+    let lb = document.getElementById('storefront-lightbox');
+    if (!lb) {
+      lb = document.createElement('div');
+      lb.id = 'storefront-lightbox';
+      lb.innerHTML = `
+        <div class="lb-backdrop"></div>
+        <div class="lb-content">
+          <button class="lb-close" title="Cerrar"><i class="bi bi-x-lg"></i></button>
+          <img class="lb-img" src="" alt="">
+          <div class="lb-caption"></div>
+        </div>`;
+      document.body.appendChild(lb);
+      lb.querySelector('.lb-backdrop').addEventListener('click', () => lb.classList.remove('lb-open'));
+      lb.querySelector('.lb-close').addEventListener('click',   () => lb.classList.remove('lb-open'));
+      // Cerrar con Escape
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') lb.classList.remove('lb-open');
+      });
+    }
+    lb.querySelector('.lb-img').src     = src;
+    lb.querySelector('.lb-img').alt     = nombre;
+    lb.querySelector('.lb-caption').textContent = nombre;
+    lb.classList.add('lb-open');
   },
 
   _agregarAlCarrito(producto) {
@@ -170,15 +209,12 @@ const Storefront = {
   },
 
   _actualizarTotales() {
-    // Los cargos (domicilio, transferencia) los aplica el vendedor al gestionar el pedido.
-    // El cliente solo ve el subtotal de los productos seleccionados.
     const total = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
 
     const subtotalEl = document.getElementById('storefront-subtotal');
     if (subtotalEl) subtotalEl.textContent = `$${total.toFixed(2)}`;
     document.getElementById('storefront-total').textContent = `$${total.toFixed(2)}`;
 
-    // Equivalente moneda
     const monedaSel = document.getElementById('storefront-moneda');
     const opt    = monedaSel?.selectedOptions[0];
     const tasa   = parseFloat(opt?.dataset.tasa ?? 1);
@@ -227,13 +263,13 @@ const Storefront = {
       this._renderCarrito();
       this._actualizarTotales();
     });
+
     document.getElementById('btn-confirmar-pedido')?.addEventListener('click', () => this.confirmarPedido());
   },
 
   async confirmarPedido() {
     if (!this._carrito.length) return;
 
-    // Validar fecha obligatoria
     const fechaEntrega = document.getElementById('storefront-fecha-entrega')?.value || null;
     if (!fechaEntrega) {
       UI.mostrarToast('Selecciona una fecha de entrega', 'error');
@@ -243,7 +279,6 @@ const Storefront = {
 
     const horaEntrega = document.getElementById('storefront-hora-entrega')?.value || null;
 
-    // Dirección de entrega (solo domicilio)
     let direccionEntrega = null;
     if (this._tipoEntrega === 'domicilio') {
       if (this._usarDirGuardada) {
@@ -259,7 +294,6 @@ const Storefront = {
     }
 
     const subtotal   = this._carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-    // Los cargos (domicilio, transferencia) los asigna el vendedor al revisar el pedido.
     const metodoPago = document.getElementById('storefront-metodo-pago').value;
     const notas      = document.getElementById('storefront-notas').value.trim() || null;
 
@@ -269,9 +303,9 @@ const Storefront = {
 
     const ventaPayload = {
       tipo_entrega:        this._tipoEntrega,
-      cargo_domicilio:     0,   // el vendedor lo asigna al gestionar el pedido
+      cargo_domicilio:     0,
       metodo_pago:         metodoPago,
-      cargo_transferencia: 0,   // ídem
+      cargo_transferencia: 0,
       moneda_id:           monedaId,
       moneda_nombre:       opt?.dataset.nombre ?? null,
       moneda_simbolo:      opt?.dataset.simbolo ?? null,
@@ -323,7 +357,6 @@ const Storefront = {
     document.getElementById('storefront-cargo-row')?.classList.add('d-none');
     document.getElementById('storefront-direccion-row').classList.add('d-none');
 
-    // Reset dirección
     document.getElementById('btn-dir-guardada')?.classList.add('active');
     document.getElementById('btn-dir-otra')?.classList.remove('active');
     document.getElementById('storefront-dir-guardada-label')?.classList.remove('d-none');
@@ -334,3 +367,4 @@ const Storefront = {
     this._renderCarrito();
   },
 };
+
