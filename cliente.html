@@ -360,6 +360,11 @@
 
     .prod-card:hover { background: #1f1309; }
 
+    .prod-card__img-wrap {
+      position: relative;
+      overflow: hidden;
+    }
+
     .prod-card__img {
       width: 100%;
       aspect-ratio: 4/3;
@@ -369,6 +374,30 @@
       display: block;
     }
     .prod-card:hover .prod-card__img { opacity: 0.9; transform: scale(1.04); }
+
+    .prod-card__zoom {
+      position: absolute;
+      top: 0.45rem;
+      right: 0.45rem;
+      width: 28px;
+      height: 28px;
+      background: rgba(14,10,7,0.68);
+      border: 1px solid rgba(181,113,42,0.42);
+      border-radius: 2px;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.78rem;
+      opacity: 0;
+      transition: opacity 0.22s, background 0.18s;
+      z-index: 3;
+      backdrop-filter: blur(4px);
+      line-height: 1;
+    }
+    .prod-card:hover .prod-card__zoom { opacity: 1; }
+    .prod-card__zoom:hover { background: rgba(181,113,42,0.28); }
 
     .prod-card__placeholder {
       width: 100%;
@@ -519,24 +548,23 @@
 
     .lux-ci {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 0.5rem;
       padding: 0.7rem 0;
       border-bottom: 1px solid rgba(181,113,42,0.07);
-      min-width: 0;       /* clave: evita que el flex item estire al padre */
-      overflow: hidden;
+      min-width: 0;
     }
     .lux-ci:last-child { border-bottom: none; }
 
     .lux-ci__name {
-      flex: 1 1 0;        /* crece pero puede encogerse hasta 0 */
+      flex: 1 1 0;
       font-family: 'Cormorant Garamond', serif;
       font-size: 0.88rem;
       color: var(--mist);
       min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      line-height: 1.38;
+      word-break: break-word;
+      padding-top: 1px; /* optical alignment with controls */
     }
 
     .lux-ci__controls {
@@ -1771,7 +1799,7 @@
           <p class="lux-location__eyebrow">
             <span></span>Dónde encontrarnos
           </p>
-          <h2 class="lux-location__title">Nuestro punto de recogida</h2>
+          <h2 class="lux-location__title">Nuestra tienda</h2>
           <address class="lux-location__address">
             <i class="bi bi-geo-alt"></i>
             Prado 222 e/ Narciso López y Cervantes
@@ -1943,7 +1971,12 @@
         return `
         <div class="prod-card" data-id="${p.id}" style="animation-delay:${delayMs}ms">
           ${p.imagen_url
-            ? `<img class="prod-card__img" src="${p.imagen_url}" alt="${p.nombre}">`
+            ? `<div class="prod-card__img-wrap">
+                <img class="prod-card__img" src="${p.imagen_url}" alt="${p.nombre}">
+                <button class="prod-card__zoom" data-zoom-src="${p.imagen_url}" data-zoom-name="${p.nombre}" title="Ver imagen">
+                  <i class="bi bi-zoom-in"></i>
+                </button>
+               </div>`
             : `<div class="prod-card__placeholder"><i class="bi bi-box-seam"></i></div>`}
           <div class="prod-card__body">
             <div class="prod-card__num">${String(i+1).padStart(2,'0')}</div>
@@ -1964,6 +1997,19 @@
         card.addEventListener('click', () => {
           const prod = filtrados.find(p => String(p.id) === String(card.dataset.id));
           if (prod) this._agregarAlCarrito(prod);
+        });
+      });
+
+      /* Zoom buttons — stop propagation so card click (add to cart) doesn't fire */
+      container.querySelectorAll('.prod-card__zoom').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const overlay = document.getElementById('img-zoom-overlay');
+          const img     = document.getElementById('img-zoom-el');
+          const caption = document.getElementById('img-zoom-caption');
+          img.src            = btn.dataset.zoomSrc;
+          caption.textContent = btn.dataset.zoomName;
+          overlay.style.display = 'flex';
         });
       });
     };
@@ -2159,5 +2205,28 @@
       } catch (_) { /* silencioso */ }
     })();
   </script>
+  <!-- ── IMAGE ZOOM OVERLAY ──────────────────────── -->
+  <div id="img-zoom-overlay"
+       style="display:none;position:fixed;inset:0;z-index:10000;
+              background:rgba(14,10,7,0.94);backdrop-filter:blur(10px);
+              align-items:center;justify-content:center;flex-direction:column;gap:1rem;
+              cursor:zoom-out"
+       onclick="if(event.target===this)this.style.display='none'">
+    <button onclick="document.getElementById('img-zoom-overlay').style.display='none'"
+            style="position:absolute;top:1.25rem;right:1.25rem;background:rgba(14,10,7,0.7);
+                   border:1px solid rgba(181,113,42,0.38);color:var(--gold);width:36px;height:36px;
+                   border-radius:2px;display:flex;align-items:center;justify-content:center;
+                   cursor:pointer;font-size:1.1rem;z-index:1">
+      <i class="bi bi-x"></i>
+    </button>
+    <img id="img-zoom-el" src="" alt=""
+         style="max-width:min(92vw,900px);max-height:82vh;object-fit:contain;
+                border:1px solid rgba(181,113,42,0.22);border-radius:2px;
+                box-shadow:0 8px 60px rgba(0,0,0,0.7)">
+    <span id="img-zoom-caption"
+          style="font-family:'Cormorant Garamond',serif;font-size:0.88rem;font-weight:300;
+                 letter-spacing:0.1em;color:rgba(242,236,228,0.45)"></span>
+  </div>
+
 </body>
 </html>
