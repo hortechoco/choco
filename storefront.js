@@ -107,31 +107,6 @@ const Storefront = {
     });
   },
 
-  _mostrarLightbox(src, nombre) {
-    let lb = document.getElementById('storefront-lightbox');
-    if (!lb) {
-      lb = document.createElement('div');
-      lb.id = 'storefront-lightbox';
-      lb.innerHTML =
-        '<div class="lb-backdrop"></div>'
-        + '<div class="lb-content">'
-        + '<button class="lb-close" title="Cerrar"><i class="bi bi-x-lg"></i></button>'
-        + '<img class="lb-img" src="" alt="">'
-        + '<div class="lb-caption"></div>'
-        + '</div>';
-      document.body.appendChild(lb);
-      lb.querySelector('.lb-backdrop').addEventListener('click', () => lb.classList.remove('lb-open'));
-      lb.querySelector('.lb-close').addEventListener('click',   () => lb.classList.remove('lb-open'));
-      document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') lb.classList.remove('lb-open');
-      });
-    }
-    lb.querySelector('.lb-img').src             = src;
-    lb.querySelector('.lb-img').alt             = nombre;
-    lb.querySelector('.lb-caption').textContent = nombre;
-    lb.classList.add('lb-open');
-  },
-
   _agregarAlCarrito(producto) {
     const existente = this._carrito.find(i => i.productoId === producto.id);
     if (existente) existente.cantidad++;
